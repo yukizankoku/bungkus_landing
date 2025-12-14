@@ -47,7 +47,7 @@ const App = () => (
             <BrowserRouter>
               <Routes>
                 {/* Public Routes */}
-                <Route path="/" element={<Home/>} />
+                <Route path="/" element={<Home />} />
                 <Route path="/solusi-korporat" element={<CorporateSolutions />} />
                 <Route path="/solusi-umkm" element={<UMKMSolutions />} />
                 <Route path="/produk" element={<Products />} />
