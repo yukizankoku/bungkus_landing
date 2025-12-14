@@ -1,0 +1,43 @@
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+
+type Language = 'id' | 'en';
+
+interface LanguageContextType {
+  language: Language;
+  setLanguage: (lang: Language) => void;
+  t: (id: string, en: string) => string;
+}
+
+const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
+
+export function LanguageProvider({ children }: { children: ReactNode }) {
+  const [language, setLanguage] = useState<Language>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('bungkus-language');
+      return (saved as Language) || 'id';
+    }
+    return 'id';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('bungkus-language', language);
+  }, [language]);
+
+  const t = (id: string, en: string) => {
+    return language === 'id' ? id : en;
+  };
+
+  return (
+    <LanguageContext.Provider value={{ language, setLanguage, t }}>
+      {children}
+    </LanguageContext.Provider>
+  );
+}
+
+export function useLanguage() {
+  const context = useContext(LanguageContext);
+  if (context === undefined) {
+    throw new Error('useLanguage must be used within a LanguageProvider');
+  }
+  return context;
+}
