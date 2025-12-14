@@ -1,0 +1,88 @@
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+
+export interface PageContent {
+  id: string;
+  page_key: string;
+  content_en: Record<string, any>;
+  content_id: Record<string, any>;
+  updated_at: string;
+}
+
+export function usePageContent(pageKey: string) {
+  return useQuery({
+    queryKey: ['page-content', pageKey],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('page_content')
+        .select('*')
+        .eq('page_key', pageKey)
+        .maybeSingle();
+      
+      if (error) throw error;
+      return data as PageContent | null;
+    }
+  });
+}
+
+export function useAllPageContent() {
+  return useQuery({
+    queryKey: ['page-content'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('page_content')
+        .select('*')
+        .order('page_key');
+      
+      if (error) throw error;
+      return data as PageContent[];
+    }
+  });
+}
+
+export function useUpdatePageContent() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ 
+      pageKey, 
+      contentEn, 
+      contentId 
+    }: { 
+      pageKey: string; 
+      contentEn: Record<string, any>; 
+      contentId: Record<string, any>;
+    }) => {
+      const { data, error } = await supabase
+        .from('page_content')
+        .update({
+          content_en: contentEn,
+          content_id: contentId,
+          updated_at: new Date().toISOString()
+        })
+        .eq('page_key', pageKey)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['page-content'] });
+      queryClient.invalidateQueries({ queryKey: ['page-content', variables.pageKey] });
+      toast({
+        title: 'Page updated',
+        description: 'Your changes have been saved.'
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to update page.',
+        variant: 'destructive'
+      });
+    }
+  });
+}

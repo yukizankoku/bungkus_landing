@@ -26,6 +26,10 @@ export type Database = {
           featured_image: string | null
           id: string
           is_published: boolean | null
+          meta_description_en: string | null
+          meta_description_id: string | null
+          meta_title_en: string | null
+          meta_title_id: string | null
           slug: string
           title_en: string
           title_id: string
@@ -42,6 +46,10 @@ export type Database = {
           featured_image?: string | null
           id?: string
           is_published?: boolean | null
+          meta_description_en?: string | null
+          meta_description_id?: string | null
+          meta_title_en?: string | null
+          meta_title_id?: string | null
           slug: string
           title_en: string
           title_id: string
@@ -58,6 +66,10 @@ export type Database = {
           featured_image?: string | null
           id?: string
           is_published?: boolean | null
+          meta_description_en?: string | null
+          meta_description_id?: string | null
+          meta_title_en?: string | null
+          meta_title_id?: string | null
           slug?: string
           title_en?: string
           title_id?: string
