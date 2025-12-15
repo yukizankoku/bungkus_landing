@@ -25,7 +25,7 @@ export function ClientsSection({ title, subtitle, logos }: ClientsSectionProps) 
   }));
 
   return (
-    <section className="py-20 bg-background">
+    <section className="py-16 bg-background">
       <div className="container mx-auto px-4">
         <div className="text-center max-w-3xl mx-auto mb-12">
           <h2 className="text-2xl sm:text-3xl font-display font-bold text-foreground mb-3">

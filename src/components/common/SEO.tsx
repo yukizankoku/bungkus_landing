@@ -14,7 +14,7 @@ export function SEO({
   title,
   description,
   keywords,
-  image = '/og-image.jpg',
+  image = '/og-image.png',
   url,
   type = 'website',
 }: SEOProps) {

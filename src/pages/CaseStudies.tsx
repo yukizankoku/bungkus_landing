@@ -6,48 +6,30 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { SEO } from '@/components/common/SEO';
 import { Layout } from '@/components/layout/Layout';
 import { CTASection } from '@/components/home/CTASection';
-
-const caseStudies = [
-  {
-    id: 1,
-    titleId: 'PT Makanan Nusantara - Transformasi Kemasan',
-    titleEn: 'PT Makanan Nusantara - Packaging Transformation',
-    excerptId: 'Bagaimana kami membantu perusahaan F&B besar meningkatkan efisiensi kemasan hingga 40%.',
-    excerptEn: 'How we helped a large F&B company improve packaging efficiency by 40%.',
-    category: 'Corporate',
-    industry: 'Food & Beverage',
-  },
-  {
-    id: 2,
-    titleId: 'Dapur Mama Siti - Dari UMKM ke Brand Nasional',
-    titleEn: 'Dapur Mama Siti - From SME to National Brand',
-    excerptId: 'Cerita sukses UMKM kuliner yang berkembang dengan kemasan yang tepat.',
-    excerptEn: 'Success story of a culinary SME that grew with the right packaging.',
-    category: 'UMKM',
-    industry: 'Culinary',
-  },
-  {
-    id: 3,
-    titleId: 'Coffee Chain - Rebranding dengan Kemasan Baru',
-    titleEn: 'Coffee Chain - Rebranding with New Packaging',
-    excerptId: 'Proyek rebranding lengkap dengan kemasan custom untuk jaringan kopi premium.',
-    excerptEn: 'Complete rebranding project with custom packaging for premium coffee chain.',
-    category: 'Corporate',
-    industry: 'Coffee & Beverages',
-  },
-];
+import { usePageContent } from '@/hooks/usePageContent';
 
 export default function CaseStudies() {
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
+  const { data: pageContent } = usePageContent('case-studies');
+
+  const content = language === 'id' ? pageContent?.content_id : pageContent?.content_en;
+
+  // Fallback content
+  const hero = content?.hero || {
+    title: 'Case Studies',
+    subtitle: t('Temukan bagaimana bisnis lain berhasil dengan solusi kemasan kami.', 'Discover how other businesses have succeeded with our packaging solutions.')
+  };
+  const caseStudies = content?.caseStudies || [
+    { id: 1, title: t('PT Makanan Nusantara - Transformasi Kemasan', 'PT Makanan Nusantara - Packaging Transformation'), excerpt: t('Bagaimana kami membantu perusahaan F&B besar meningkatkan efisiensi kemasan hingga 40%.', 'How we helped a large F&B company improve packaging efficiency by 40%.'), category: 'Corporate', industry: 'Food & Beverage' },
+    { id: 2, title: t('Dapur Mama Siti - Dari UMKM ke Brand Nasional', 'Dapur Mama Siti - From SME to National Brand'), excerpt: t('Cerita sukses UMKM kuliner yang berkembang dengan kemasan yang tepat.', 'Success story of a culinary SME that grew with the right packaging.'), category: 'UMKM', industry: 'Culinary' },
+    { id: 3, title: t('Coffee Chain - Rebranding dengan Kemasan Baru', 'Coffee Chain - Rebranding with New Packaging'), excerpt: t('Proyek rebranding lengkap dengan kemasan custom untuk jaringan kopi premium.', 'Complete rebranding project with custom packaging for premium coffee chain.'), category: 'Corporate', industry: 'Coffee & Beverages' },
+  ];
 
   return (
     <Layout>
       <SEO
-        title="Case Studies"
-        description={t(
-          'Cerita sukses klien Bungkus Indonesia dalam transformasi kemasan bisnis mereka.',
-          'Success stories of Bungkus Indonesia clients in transforming their business packaging.'
-        )}
+        title={content?.seo?.title || 'Case Studies'}
+        description={content?.seo?.description || t('Cerita sukses klien Bungkus Indonesia dalam transformasi kemasan bisnis mereka.', 'Success stories of Bungkus Indonesia clients in transforming their business packaging.')}
       />
 
       {/* Hero */}
@@ -55,13 +37,10 @@ export default function CaseStudies() {
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto text-center">
             <h1 className="text-4xl sm:text-5xl font-display font-bold text-white mb-6">
-              Case Studies
+              {hero.title}
             </h1>
             <p className="text-lg text-white/80">
-              {t(
-                'Temukan bagaimana bisnis lain berhasil dengan solusi kemasan kami.',
-                'Discover how other businesses have succeeded with our packaging solutions.'
-              )}
+              {hero.subtitle}
             </p>
           </div>
         </div>
@@ -71,7 +50,7 @@ export default function CaseStudies() {
       <section className="py-24 bg-background">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {caseStudies.map((study) => (
+            {caseStudies.map((study: any) => (
               <div
                 key={study.id}
                 className="group rounded-2xl bg-card border border-border overflow-hidden hover:border-secondary/50 transition-all duration-300 hover-lift"
@@ -87,10 +66,10 @@ export default function CaseStudies() {
                     </span>
                   </div>
                   <h3 className="text-xl font-display font-semibold text-foreground mb-3 group-hover:text-secondary transition-colors">
-                    {t(study.titleId, study.titleEn)}
+                    {study.title}
                   </h3>
                   <p className="text-muted-foreground text-sm mb-4">
-                    {t(study.excerptId, study.excerptEn)}
+                    {study.excerpt}
                   </p>
                   <Button variant="ghost" size="sm" className="gap-2 p-0 h-auto text-secondary hover:text-secondary/80">
                     {t('Baca Selengkapnya', 'Read More')}

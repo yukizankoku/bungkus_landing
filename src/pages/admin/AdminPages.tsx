@@ -42,7 +42,7 @@ export default function AdminPages() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <Link to={`/admin/pages/${page.page_key}`}>
+                  <Link to={page.page_key === 'home' ? '/admin/home' : `/admin/pages/${page.page_key}`}>
                     <Button variant="outline" className="w-full">
                       <Edit className="h-4 w-4 mr-2" />
                       {language === 'en' ? 'Edit Page' : 'Edit Halaman'}

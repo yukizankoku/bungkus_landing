@@ -52,6 +52,11 @@ export function Navbar() {
   const textColor = isHome && !isScrolled ? 'text-white' : 'text-foreground';
   const logo = isHome && !isScrolled ? logoWhite : logoDarkBlue;
 
+  // Dynamic button styling for "Hubungi Kami"
+  const contactButtonClass = isHome && !isScrolled
+    ? 'bg-white text-primary hover:bg-white/90'
+    : 'bg-primary text-white hover:bg-primary/90';
+
   return (
     <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${navBg}`}>
       <div className="container mx-auto px-4">
@@ -67,7 +72,7 @@ export function Navbar() {
               link.children ? (
                 <DropdownMenu key={index}>
                   <DropdownMenuTrigger asChild>
-                    <button className={`flex items-center gap-1 px-4 py-2 text-sm font-medium ${textColor} hover:text-secondary transition-colors`}>
+                    <button className={`nav-item-3d flex items-center gap-1 px-4 py-2 text-sm font-medium ${textColor} hover:text-secondary transition-all`}>
                       {link.label}
                       <ChevronDown className="h-4 w-4" />
                     </button>
@@ -86,7 +91,7 @@ export function Navbar() {
                 <Link
                   key={link.href}
                   to={link.href}
-                  className={`px-4 py-2 text-sm font-medium ${textColor} hover:text-secondary transition-colors ${
+                  className={`nav-item-3d px-4 py-2 text-sm font-medium ${textColor} hover:text-secondary transition-all ${
                     location.pathname === link.href ? 'text-secondary' : ''
                   }`}
                 >
@@ -101,7 +106,7 @@ export function Navbar() {
             {/* Language Switcher */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className={textColor}>
+                <Button variant="ghost" size="sm" className={`nav-item-3d ${textColor}`}>
                   <Globe className="h-4 w-4 mr-1" />
                   {language.toUpperCase()}
                 </Button>
@@ -118,7 +123,7 @@ export function Navbar() {
 
             {user ? (
               isAdmin ? (
-                <Button asChild>
+                <Button asChild className={contactButtonClass}>
                   <Link to="/admin">Admin Panel</Link>
                 </Button>
               ) : (
@@ -127,7 +132,7 @@ export function Navbar() {
                 </Button>
               )
             ) : (
-              <Button asChild>
+              <Button asChild className={contactButtonClass}>
                 <Link to="/hubungi-kami">{t('Hubungi Kami', 'Contact Us')}</Link>
               </Button>
             )}

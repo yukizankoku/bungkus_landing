@@ -26,7 +26,7 @@ export function CTASection({ title, subtitle, primaryButton, secondaryButton }: 
   const displaySecondaryButton = secondaryButton || t('Lihat Produk', 'View Products');
 
   return (
-    <section className="py-24 bg-background">
+    <section className="py-16 bg-background">
       <div className="container mx-auto px-4">
         <div className="relative overflow-hidden rounded-3xl gradient-primary p-12 md:p-16 text-center">
           {/* Background decoration */}

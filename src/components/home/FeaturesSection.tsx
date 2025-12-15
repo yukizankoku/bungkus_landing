@@ -68,7 +68,7 @@ export function FeaturesSection({ title, subtitle, items }: FeaturesSectionProps
   }));
 
   return (
-    <section className="py-24 bg-background">
+    <section className="py-16 bg-background">
       <div className="container mx-auto px-4">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <h2 className="text-3xl sm:text-4xl font-display font-bold text-foreground mb-4">

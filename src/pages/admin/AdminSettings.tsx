@@ -16,7 +16,7 @@ export default function AdminSettings() {
 
   const [logo, setLogo] = useState({ light: '', dark: '' });
   const [contact, setContact] = useState({ email: '', phone: '', whatsapp: '', address: '' });
-  const [social, setSocial] = useState({ instagram: '', facebook: '', linkedin: '', youtube: '' });
+  const [social, setSocial] = useState({ instagram: '', facebook: '', linkedin: '', youtube: '', twitter: '' });
 
   useEffect(() => {
     if (settings) {
@@ -128,6 +128,10 @@ export default function AdminSettings() {
             <div>
               <Label>YouTube</Label>
               <Input value={social.youtube} onChange={(e) => setSocial(prev => ({ ...prev, youtube: e.target.value }))} placeholder="https://youtube.com/..." />
+            </div>
+            <div>
+              <Label>X (Twitter)</Label>
+              <Input value={social.twitter} onChange={(e) => setSocial(prev => ({ ...prev, twitter: e.target.value }))} placeholder="https://x.com/..." />
             </div>
           </CardContent>
         </Card>

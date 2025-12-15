@@ -1,11 +1,23 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Mail, Phone, MapPin, Instagram, Linkedin, Facebook } from 'lucide-react';
+import { Mail, Phone, MapPin, Instagram, Linkedin, Facebook, Youtube } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useSiteSettings } from '@/hooks/useSiteSettings';
 import logoWhite from '@/assets/logo-white.png';
+
+// X (Twitter) icon component
+const XIcon = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+  </svg>
+);
 
 export function Footer() {
   const { t } = useLanguage();
+  const { data: settings } = useSiteSettings();
+
+  const socialSetting = settings?.find(s => s.key === 'social')?.value as { instagram?: string; facebook?: string; linkedin?: string; youtube?: string; twitter?: string } | undefined;
+  const contactSetting = settings?.find(s => s.key === 'contact')?.value as { email?: string; phone?: string; address?: string } | undefined;
 
   const quickLinks = [
     { href: '/', label: t('Beranda', 'Home') },
@@ -17,16 +29,19 @@ export function Footer() {
   ];
 
   const contactInfo = [
-    { icon: Mail, text: 'info@bungkusindonesia.com', href: 'mailto:info@bungkusindonesia.com' },
-    { icon: Phone, text: '+62 21 1234 5678', href: 'tel:+622112345678' },
-    { icon: MapPin, text: 'Jakarta, Indonesia', href: '#' },
+    { icon: Mail, text: contactSetting?.email || 'info@bungkusindonesia.com', href: `mailto:${contactSetting?.email || 'info@bungkusindonesia.com'}` },
+    { icon: Phone, text: contactSetting?.phone || '+62 21 1234 5678', href: `tel:${contactSetting?.phone || '+622112345678'}` },
+    { icon: MapPin, text: contactSetting?.address || 'Jakarta, Indonesia', href: '#' },
   ];
 
+  // Only include social links that have a URL
   const socialLinks = [
-    { icon: Instagram, href: 'https://instagram.com', label: 'Instagram' },
-    { icon: Linkedin, href: 'https://linkedin.com', label: 'LinkedIn' },
-    { icon: Facebook, href: 'https://facebook.com', label: 'Facebook' },
-  ];
+    { icon: Instagram, href: socialSetting?.instagram, label: 'Instagram' },
+    { icon: Facebook, href: socialSetting?.facebook, label: 'Facebook' },
+    { icon: Linkedin, href: socialSetting?.linkedin, label: 'LinkedIn' },
+    { icon: Youtube, href: socialSetting?.youtube, label: 'YouTube' },
+    { icon: XIcon, href: socialSetting?.twitter, label: 'X' },
+  ].filter(link => link.href && link.href.trim() !== '');
 
   return (
     <footer className="bg-primary text-primary-foreground">
@@ -43,20 +58,22 @@ export function Footer() {
                 'Quality packaging solutions for Indonesian businesses. Serving corporations and SMEs with dedication.'
               )}
             </p>
-            <div className="flex gap-4">
-              {socialLinks.map((social) => (
-                <a
-                  key={social.label}
-                  href={social.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="p-2 rounded-full bg-primary-foreground/10 hover:bg-primary-foreground/20 transition-colors"
-                  aria-label={social.label}
-                >
-                  <social.icon className="h-5 w-5" />
-                </a>
-              ))}
-            </div>
+            {socialLinks.length > 0 && (
+              <div className="flex gap-4">
+                {socialLinks.map((social) => (
+                  <a
+                    key={social.label}
+                    href={social.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-2 rounded-full bg-primary-foreground/10 hover:bg-primary-foreground/20 transition-colors"
+                    aria-label={social.label}
+                  >
+                    <social.icon className="h-5 w-5" />
+                  </a>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Quick Links */}
