@@ -4,6 +4,7 @@ import { Menu, X, ChevronDown, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSiteSettings } from '@/hooks/useSiteSettings';
 import logoWhite from '@/assets/logo-white.png';
 import logoDarkBlue from '@/assets/logo-dark-blue.png';
 import {
@@ -19,6 +20,9 @@ export function Navbar() {
   const { language, setLanguage, t } = useLanguage();
   const { user, isAdmin } = useAuth();
   const location = useLocation();
+  const { data: settings } = useSiteSettings();
+
+  const logoSetting = settings?.find(s => s.key === 'logo')?.value as { light?: string; dark?: string } | undefined;
 
   const isHome = location.pathname === '/';
 
@@ -39,7 +43,13 @@ export function Navbar() {
         { href: '/solusi-umkm', label: 'UMKM' },
       ],
     },
-    { href: '/produk', label: t('Produk', 'Products') },
+    {
+      label: t('Produk', 'Products'),
+      children: [
+        { href: '/produk', label: t('Kategori Industri', 'Industry Categories') },
+        { href: '/produk/katalog', label: t('Katalog Produk', 'Product Catalog') },
+      ],
+    },
     { href: '/case-studies', label: 'Case Studies' },
     { href: '/blog', label: 'Blog' },
     { href: '/tentang-kami', label: t('Tentang Kami', 'About Us') },
@@ -50,7 +60,11 @@ export function Navbar() {
     : 'bg-background/95 backdrop-blur-md shadow-sm';
   
   const textColor = isHome && !isScrolled ? 'text-white' : 'text-foreground';
-  const logo = isHome && !isScrolled ? logoWhite : logoDarkBlue;
+  
+  // Use CMS logo if available, fallback to static assets
+  const logo = isHome && !isScrolled 
+    ? (logoSetting?.dark || logoWhite) 
+    : (logoSetting?.light || logoDarkBlue);
 
   // Dynamic button styling for "Hubungi Kami"
   const contactButtonClass = isHome && !isScrolled
@@ -165,7 +179,11 @@ export function Navbar() {
                         <Link
                           key={child.href}
                           to={child.href}
-                          className="block px-3 py-2 text-sm hover:text-secondary transition-colors"
+                          className={`block px-3 py-2 text-sm transition-colors ${
+                            location.pathname === child.href 
+                              ? 'text-secondary bg-secondary/10 rounded-md font-medium' 
+                              : 'hover:text-secondary'
+                          }`}
                           onClick={() => setIsOpen(false)}
                         >
                           {child.label}
@@ -177,7 +195,11 @@ export function Navbar() {
                   <Link
                     key={link.href}
                     to={link.href}
-                    className="px-3 py-2 text-sm font-medium hover:text-secondary transition-colors"
+                    className={`px-3 py-2 text-sm font-medium transition-colors rounded-md ${
+                      location.pathname === link.href 
+                        ? 'text-secondary bg-secondary/10' 
+                        : 'hover:text-secondary'
+                    }`}
                     onClick={() => setIsOpen(false)}
                   >
                     {link.label}

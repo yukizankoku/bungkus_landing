@@ -13,7 +13,8 @@ import {
   Menu, 
   X,
   ChevronRight,
-  Home
+  Home,
+  Globe
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -23,7 +24,7 @@ interface AdminLayoutProps {
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
   const { signOut } = useAuth();
-  const { language } = useLanguage();
+  const { language, setLanguage } = useLanguage();
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -31,6 +32,10 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const handleSignOut = async () => {
     await signOut();
     navigate('/');
+  };
+
+  const toggleLanguage = () => {
+    setLanguage(language === 'en' ? 'id' : 'en');
   };
 
   const menuItems = [
@@ -125,7 +130,23 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           </nav>
 
           {/* Footer */}
-          <div className="p-4 border-t border-border">
+          <div className="p-4 border-t border-border space-y-2">
+            {/* Language Switcher */}
+            <Button
+              variant="ghost"
+              className="w-full justify-start gap-3 text-muted-foreground hover:text-foreground"
+              onClick={toggleLanguage}
+            >
+              <Globe className="h-5 w-5" />
+              <span className="flex-1 text-left">
+                {language === 'en' ? 'English' : 'Bahasa Indonesia'}
+              </span>
+              <span className="text-xs bg-muted px-2 py-1 rounded">
+                {language.toUpperCase()}
+              </span>
+            </Button>
+            
+            {/* Sign Out */}
             <Button
               variant="ghost"
               className="w-full justify-start gap-3 text-muted-foreground hover:text-foreground"

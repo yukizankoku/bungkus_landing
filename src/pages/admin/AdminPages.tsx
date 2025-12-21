@@ -8,13 +8,16 @@ import AdminLayout from '@/components/admin/AdminLayout';
 
 const pageNames: Record<string, { en: string; id: string }> = {
   home: { en: 'Home', id: 'Beranda' },
-  corporate: { en: 'Corporate Solutions', id: 'Solusi Korporat' },
-  umkm: { en: 'UMKM Solutions', id: 'Solusi UMKM' },
-  products: { en: 'Products', id: 'Produk' },
+  'corporate-solutions': { en: 'Corporate Solutions', id: 'Solusi Korporat' },
+  'umkm-solutions': { en: 'UMKM Solutions', id: 'Solusi UMKM' },
+  products: { en: 'Industry Categories', id: 'Kategori Industri' },
+  'product-catalog': { en: 'Product Catalog', id: 'Katalog Produk' },
   'case-studies': { en: 'Case Studies', id: 'Studi Kasus' },
   about: { en: 'About', id: 'Tentang' },
   contact: { en: 'Contact', id: 'Kontak' },
-  blog: { en: 'Blog', id: 'Blog' }
+  blog: { en: 'Blog', id: 'Blog' },
+  'privacy-policy': { en: 'Privacy Policy', id: 'Kebijakan Privasi' },
+  'terms-conditions': { en: 'Terms & Conditions', id: 'Syarat & Ketentuan' }
 };
 
 export default function AdminPages() {

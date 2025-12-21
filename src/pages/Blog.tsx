@@ -4,33 +4,54 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { SEO } from '@/components/common/SEO';
 import { Layout } from '@/components/layout/Layout';
 import { useBlogs } from '@/hooks/useBlogs';
+import { usePageContent } from '@/hooks/usePageContent';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Calendar, Tag } from 'lucide-react';
 import { format } from 'date-fns';
 
 export default function Blog() {
   const { language, t } = useLanguage();
-  const { data: blogs, isLoading } = useBlogs(true);
+  const { data: blogs, isLoading: blogsLoading } = useBlogs(true);
+  const { data: pageContent, isLoading: contentLoading } = usePageContent('blog');
+
+  const content = language === 'id' ? pageContent?.content_id : pageContent?.content_en;
+  
+  // Hero image should be shared across languages - use English as fallback
+  const heroImage = content?.hero?.image || pageContent?.content_en?.hero?.image;
+  
+  const hero = { 
+    ...(content?.hero || {
+      title: 'Blog',
+      subtitle: t('Artikel dan tips seputar kemasan.', 'Articles and tips about packaging.')
+    }),
+    image: heroImage 
+  };
 
   return (
     <Layout>
       <SEO 
-        title="Blog" 
-        description={t('Artikel dan tips seputar kemasan dari Bungkus Indonesia.', 'Articles and packaging tips from Bungkus Indonesia.')} 
+        title={content?.seo?.title || 'Blog'} 
+        description={content?.seo?.description || t('Artikel dan tips seputar kemasan dari Bungkus Indonesia.', 'Articles and packaging tips from Bungkus Indonesia.')} 
+        pageKey="blog"
       />
       
       {/* Hero Section */}
-      <section className="pt-32 pb-20 gradient-hero">
+      <section 
+        className="pt-32 pb-20 gradient-hero relative bg-cover bg-center"
+        style={hero.image ? { 
+          backgroundImage: `linear-gradient(to right, hsl(var(--primary) / 0.9), hsl(var(--primary) / 0.7)), url(${hero.image})` 
+        } : undefined}
+      >
         <div className="container mx-auto px-4 text-center">
-          <h1 className="text-4xl sm:text-5xl font-display font-bold text-white mb-6">Blog</h1>
-          <p className="text-lg text-white/80">{t('Artikel dan tips seputar kemasan.', 'Articles and tips about packaging.')}</p>
+          <h1 className="text-4xl sm:text-5xl font-display font-bold text-white mb-6">{hero.title}</h1>
+          <p className="text-lg text-white/80">{hero.subtitle}</p>
         </div>
       </section>
 
       {/* Blog Grid */}
       <section className="py-16 bg-background">
         <div className="container mx-auto px-4">
-          {isLoading ? (
+          {blogsLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {[1, 2, 3].map((i) => (
                 <div key={i} className="space-y-4">

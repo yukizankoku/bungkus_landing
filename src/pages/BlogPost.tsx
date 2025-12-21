@@ -1,6 +1,7 @@
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Calendar, User, Tag } from 'lucide-react';
+import { ArrowLeft, Calendar, Tag } from 'lucide-react';
+import DOMPurify from 'dompurify';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { SEO } from '@/components/common/SEO';
@@ -108,7 +109,7 @@ export default function BlogPost() {
             {/* Content */}
             <div 
               className="prose prose-lg max-w-none prose-headings:font-display prose-headings:font-bold prose-h1:text-3xl prose-h2:text-2xl prose-h3:text-xl prose-p:text-muted-foreground prose-a:text-secondary prose-img:rounded-xl"
-              dangerouslySetInnerHTML={{ __html: content || '' }}
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content || '') }}
             />
           </div>
         </div>

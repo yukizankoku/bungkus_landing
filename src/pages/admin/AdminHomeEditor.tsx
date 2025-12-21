@@ -9,6 +9,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AdminLayout from '@/components/admin/AdminLayout';
 import ImageUploader from '@/components/admin/ImageUploader';
+import LivePreview from '@/components/admin/LivePreview';
+import IconSelector from '@/components/admin/IconSelector';
+import PageLinkSelector from '@/components/admin/PageLinkSelector';
 import { usePageContent, useUpdatePageContent } from '@/hooks/usePageContent';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -114,17 +117,19 @@ export default function AdminHomeEditor() {
           </Button>
         </div>
 
-        <Tabs defaultValue="hero" className="space-y-6">
-          <TabsList className="grid grid-cols-4 lg:grid-cols-8 w-full">
-            <TabsTrigger value="hero">Hero</TabsTrigger>
-            <TabsTrigger value="features">Features</TabsTrigger>
-            <TabsTrigger value="stats">Stats</TabsTrigger>
-            <TabsTrigger value="products">Products</TabsTrigger>
-            <TabsTrigger value="clients">Clients</TabsTrigger>
-            <TabsTrigger value="testimonials">Testimonials</TabsTrigger>
-            <TabsTrigger value="cta">CTA</TabsTrigger>
-            <TabsTrigger value="seo">SEO</TabsTrigger>
-          </TabsList>
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          <div>
+            <Tabs defaultValue="hero" className="space-y-6">
+              <TabsList className="grid grid-cols-4 lg:grid-cols-8 w-full">
+                <TabsTrigger value="hero">Hero</TabsTrigger>
+                <TabsTrigger value="features">Features</TabsTrigger>
+                <TabsTrigger value="stats">Stats</TabsTrigger>
+                <TabsTrigger value="products">Products</TabsTrigger>
+                <TabsTrigger value="clients">Clients</TabsTrigger>
+                <TabsTrigger value="testimonials">Testimonials</TabsTrigger>
+                <TabsTrigger value="cta">CTA</TabsTrigger>
+                <TabsTrigger value="seo">SEO</TabsTrigger>
+              </TabsList>
 
           {/* Hero Section */}
           <TabsContent value="hero" className="space-y-6">
@@ -203,19 +208,37 @@ export default function AdminHomeEditor() {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label>Primary CTA</Label>
+                      <Label>Primary CTA Text</Label>
                       <Input
                         value={contentEn.hero?.cta_primary || ''}
                         onChange={(e) => updateSection('en', 'hero', 'cta_primary', e.target.value)}
                       />
                     </div>
                     <div>
-                      <Label>Secondary CTA</Label>
+                      <Label>Secondary CTA Text</Label>
                       <Input
                         value={contentEn.hero?.cta_secondary || ''}
                         onChange={(e) => updateSection('en', 'hero', 'cta_secondary', e.target.value)}
                       />
                     </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <PageLinkSelector
+                      label="Primary CTA Link"
+                      value={contentEn.hero?.cta_primary_link || '/solusi-korporat'}
+                      onChange={(value) => {
+                        updateSection('en', 'hero', 'cta_primary_link', value);
+                        updateSection('id', 'hero', 'cta_primary_link', value);
+                      }}
+                    />
+                    <PageLinkSelector
+                      label="Secondary CTA Link"
+                      value={contentEn.hero?.cta_secondary_link || '/solusi-umkm'}
+                      onChange={(value) => {
+                        updateSection('en', 'hero', 'cta_secondary_link', value);
+                        updateSection('id', 'hero', 'cta_secondary_link', value);
+                      }}
+                    />
                   </div>
                 </CardContent>
               </Card>
@@ -248,14 +271,14 @@ export default function AdminHomeEditor() {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label>Primary CTA</Label>
+                      <Label>Primary CTA Text</Label>
                       <Input
                         value={contentId.hero?.cta_primary || ''}
                         onChange={(e) => updateSection('id', 'hero', 'cta_primary', e.target.value)}
                       />
                     </div>
                     <div>
-                      <Label>Secondary CTA</Label>
+                      <Label>Secondary CTA Text</Label>
                       <Input
                         value={contentId.hero?.cta_secondary || ''}
                         onChange={(e) => updateSection('id', 'hero', 'cta_secondary', e.target.value)}
@@ -303,11 +326,16 @@ export default function AdminHomeEditor() {
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
-                        <Input
-                          placeholder="Icon (Package, Shield, Users, Zap)"
-                          value={item.icon || ''}
-                          onChange={(e) => updateArrayItem('en', 'features', 'items', index, 'icon', e.target.value)}
-                        />
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Icon</Label>
+                          <IconSelector
+                            value={item.icon || 'Package'}
+                            onChange={(value) => {
+                              updateArrayItem('en', 'features', 'items', index, 'icon', value);
+                              updateArrayItem('id', 'features', 'items', index, 'icon', value);
+                            }}
+                          />
+                        </div>
                         <Input
                           placeholder="Title"
                           value={item.title || ''}
@@ -364,11 +392,16 @@ export default function AdminHomeEditor() {
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
-                        <Input
-                          placeholder="Icon"
-                          value={item.icon || ''}
-                          onChange={(e) => updateArrayItem('id', 'features', 'items', index, 'icon', e.target.value)}
-                        />
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Icon</Label>
+                          <IconSelector
+                            value={item.icon || 'Package'}
+                            onChange={(value) => {
+                              updateArrayItem('en', 'features', 'items', index, 'icon', value);
+                              updateArrayItem('id', 'features', 'items', index, 'icon', value);
+                            }}
+                          />
+                        </div>
                         <Input
                           placeholder="Title"
                           value={item.title || ''}
@@ -666,41 +699,114 @@ export default function AdminHomeEditor() {
               </Card>
             </div>
 
+            {/* Marquee Speed Control */}
             <Card>
               <CardHeader>
-                <CardTitle>Client Logos</CardTitle>
+                <CardTitle>Marquee Settings</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Speed control only applies when you have 5+ logos (marquee mode)
+                </p>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                <div>
+                  <Label>Animation Speed</Label>
+                  <select
+                    className="w-full mt-2 p-2 border rounded-md bg-background"
+                    value={contentEn.clients?.marquee_speed || 'normal'}
+                    onChange={(e) => {
+                      updateSection('en', 'clients', 'marquee_speed', e.target.value);
+                      updateSection('id', 'clients', 'marquee_speed', e.target.value);
+                    }}
+                  >
+                    <option value="slow">Slow (45s)</option>
+                    <option value="normal">Normal (30s)</option>
+                    <option value="fast">Fast (15s)</option>
+                    <option value="very-fast">Very Fast (10s)</option>
+                  </select>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Client Logos (Drag to Reorder)</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  {(contentEn.clients?.logos || []).length <= 4 
+                    ? 'Logos will display in a static grid (1-4 logos)'
+                    : 'Logos will scroll in an infinite marquee (5+ logos)'}
+                </p>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                   {(contentEn.clients?.logos || []).map((logo: any, index: number) => (
-                    <div key={index} className="relative p-4 border rounded-lg">
+                    <div 
+                      key={index} 
+                      className="relative p-4 border rounded-lg bg-card cursor-grab active:cursor-grabbing"
+                      draggable
+                      onDragStart={(e) => {
+                        e.dataTransfer.setData('text/plain', index.toString());
+                        e.currentTarget.classList.add('opacity-50');
+                      }}
+                      onDragEnd={(e) => {
+                        e.currentTarget.classList.remove('opacity-50');
+                      }}
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        e.currentTarget.classList.add('ring-2', 'ring-primary');
+                      }}
+                      onDragLeave={(e) => {
+                        e.currentTarget.classList.remove('ring-2', 'ring-primary');
+                      }}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        e.currentTarget.classList.remove('ring-2', 'ring-primary');
+                        const fromIndex = parseInt(e.dataTransfer.getData('text/plain'));
+                        const toIndex = index;
+                        if (fromIndex !== toIndex) {
+                          // Reorder logos in both EN and ID
+                          const logosEn = [...(contentEn.clients?.logos || [])];
+                          const logosId = [...(contentId.clients?.logos || [])];
+                          const [movedEn] = logosEn.splice(fromIndex, 1);
+                          const [movedId] = logosId.splice(fromIndex, 1);
+                          logosEn.splice(toIndex, 0, movedEn);
+                          logosId.splice(toIndex, 0, movedId);
+                          updateSection('en', 'clients', 'logos', logosEn);
+                          updateSection('id', 'clients', 'logos', logosId);
+                        }
+                      }}
+                    >
+                      <div className="absolute top-2 left-2 cursor-grab">
+                        <GripVertical className="h-4 w-4 text-muted-foreground" />
+                      </div>
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="absolute -top-2 -right-2 h-6 w-6 p-0"
+                        className="absolute -top-2 -right-2 h-6 w-6 p-0 bg-destructive text-destructive-foreground hover:bg-destructive/90"
                         onClick={() => {
                           removeArrayItem('en', 'clients', 'logos', index);
                           removeArrayItem('id', 'clients', 'logos', index);
                         }}
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-3 w-3" />
                       </Button>
-                      <ImageUploader
-                        value={logo.image || ''}
-                        onChange={(url) => {
-                          updateArrayItem('en', 'clients', 'logos', index, 'image', url);
-                          updateArrayItem('id', 'clients', 'logos', index, 'image', url);
-                        }}
-                      />
-                      <Input
-                        placeholder="Company Name"
-                        className="mt-2"
-                        value={logo.name || ''}
-                        onChange={(e) => {
-                          updateArrayItem('en', 'clients', 'logos', index, 'name', e.target.value);
-                          updateArrayItem('id', 'clients', 'logos', index, 'name', e.target.value);
-                        }}
-                      />
+                      <div className="pt-4">
+                        <ImageUploader
+                          value={logo.image || ''}
+                          onChange={(url) => {
+                            updateArrayItem('en', 'clients', 'logos', index, 'image', url);
+                            updateArrayItem('id', 'clients', 'logos', index, 'image', url);
+                          }}
+                        />
+                        <Input
+                          placeholder="Company Name"
+                          className="mt-2"
+                          value={logo.name || ''}
+                          onChange={(e) => {
+                            updateArrayItem('en', 'clients', 'logos', index, 'name', e.target.value);
+                            updateArrayItem('id', 'clients', 'logos', index, 'name', e.target.value);
+                          }}
+                        />
+                      </div>
                     </div>
                   ))}
                   <button
@@ -708,7 +814,7 @@ export default function AdminHomeEditor() {
                       addArrayItem('en', 'clients', 'logos', { name: '', image: '' });
                       addArrayItem('id', 'clients', 'logos', { name: '', image: '' });
                     }}
-                    className="p-4 border-2 border-dashed rounded-lg flex items-center justify-center hover:bg-muted/50 transition-colors min-h-[150px]"
+                    className="p-4 border-2 border-dashed rounded-lg flex items-center justify-center hover:bg-muted/50 transition-colors min-h-[180px]"
                   >
                     <Plus className="h-8 w-8 text-muted-foreground" />
                   </button>
@@ -860,6 +966,31 @@ export default function AdminHomeEditor() {
 
           {/* CTA Section */}
           <TabsContent value="cta" className="space-y-6">
+            {/* CTA Button Links - Shared across languages */}
+            <Card>
+              <CardHeader>
+                <CardTitle>CTA Button Links (Both Languages)</CardTitle>
+              </CardHeader>
+              <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <PageLinkSelector
+                  label="Primary Button Link"
+                  value={contentEn.cta?.primary_button_link || '/hubungi-kami'}
+                  onChange={(value) => {
+                    updateSection('en', 'cta', 'primary_button_link', value);
+                    updateSection('id', 'cta', 'primary_button_link', value);
+                  }}
+                />
+                <PageLinkSelector
+                  label="Secondary Button Link"
+                  value={contentEn.cta?.secondary_button_link || '/produk'}
+                  onChange={(value) => {
+                    updateSection('en', 'cta', 'secondary_button_link', value);
+                    updateSection('id', 'cta', 'secondary_button_link', value);
+                  }}
+                />
+              </CardContent>
+            </Card>
+
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <Card>
                 <CardHeader>
@@ -882,14 +1013,14 @@ export default function AdminHomeEditor() {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label>Primary Button</Label>
+                      <Label>Primary Button Text</Label>
                       <Input
                         value={contentEn.cta?.primary_button || ''}
                         onChange={(e) => updateSection('en', 'cta', 'primary_button', e.target.value)}
                       />
                     </div>
                     <div>
-                      <Label>Secondary Button</Label>
+                      <Label>Secondary Button Text</Label>
                       <Input
                         value={contentEn.cta?.secondary_button || ''}
                         onChange={(e) => updateSection('en', 'cta', 'secondary_button', e.target.value)}
@@ -920,14 +1051,14 @@ export default function AdminHomeEditor() {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label>Primary Button</Label>
+                      <Label>Primary Button Text</Label>
                       <Input
                         value={contentId.cta?.primary_button || ''}
                         onChange={(e) => updateSection('id', 'cta', 'primary_button', e.target.value)}
                       />
                     </div>
                     <div>
-                      <Label>Secondary Button</Label>
+                      <Label>Secondary Button Text</Label>
                       <Input
                         value={contentId.cta?.secondary_button || ''}
                         onChange={(e) => updateSection('id', 'cta', 'secondary_button', e.target.value)}
@@ -987,7 +1118,13 @@ export default function AdminHomeEditor() {
               </Card>
             </div>
           </TabsContent>
-        </Tabs>
+            </Tabs>
+          </div>
+          
+          <div className="hidden xl:block sticky top-6">
+            <LivePreview path="/" title="Home Preview" />
+          </div>
+        </div>
       </div>
     </AdminLayout>
   );

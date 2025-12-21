@@ -12,6 +12,7 @@ import { ArrowLeft, Loader2, Save } from 'lucide-react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import ImageUploader from '@/components/admin/ImageUploader';
 import RichTextEditor from '@/components/admin/RichTextEditor';
+import LivePreview from '@/components/admin/LivePreview';
 
 export default function AdminBlogEditor() {
   const { id } = useParams<{ id: string }>();
@@ -116,148 +117,173 @@ export default function AdminBlogEditor() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-6">
-            <Tabs defaultValue="en">
-              <TabsList>
-                <TabsTrigger value="en">English</TabsTrigger>
-                <TabsTrigger value="id">Indonesia</TabsTrigger>
-              </TabsList>
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-6">
+              <Tabs defaultValue="en">
+                <TabsList>
+                  <TabsTrigger value="en">English</TabsTrigger>
+                  <TabsTrigger value="id">Indonesia</TabsTrigger>
+                </TabsList>
 
-              <TabsContent value="en" className="space-y-4">
-                <div>
-                  <Label>Title (H1)</Label>
-                  <Input
-                    value={formData.title_en}
-                    onChange={(e) => {
-                      setFormData(prev => ({ 
-                        ...prev, 
-                        title_en: e.target.value,
-                        slug: isNew ? generateSlug(e.target.value) : prev.slug
-                      }));
-                    }}
-                    placeholder="Enter blog title..."
-                  />
-                </div>
-                <div>
-                  <Label>Excerpt</Label>
-                  <Input
-                    value={formData.excerpt_en}
-                    onChange={(e) => setFormData(prev => ({ ...prev, excerpt_en: e.target.value }))}
-                    placeholder="Brief summary..."
-                  />
-                </div>
-                <div>
-                  <Label>Content (Use H1, H2, H3 for SEO)</Label>
-                  <RichTextEditor
-                    value={formData.content_en}
-                    onChange={(value) => setFormData(prev => ({ ...prev, content_en: value }))}
-                    placeholder="Write your blog content..."
-                  />
-                </div>
-              </TabsContent>
+                <TabsContent value="en" className="space-y-4">
+                  <div>
+                    <Label>Title (H1)</Label>
+                    <Input
+                      value={formData.title_en}
+                      onChange={(e) => {
+                        setFormData(prev => ({ 
+                          ...prev, 
+                          title_en: e.target.value,
+                          slug: isNew ? generateSlug(e.target.value) : prev.slug
+                        }));
+                      }}
+                      placeholder="Enter blog title..."
+                    />
+                  </div>
+                  <div>
+                    <Label>Excerpt</Label>
+                    <Input
+                      value={formData.excerpt_en}
+                      onChange={(e) => setFormData(prev => ({ ...prev, excerpt_en: e.target.value }))}
+                      placeholder="Brief summary..."
+                    />
+                  </div>
+                  <div>
+                    <Label>Content (Use H1, H2, H3 for SEO)</Label>
+                    <RichTextEditor
+                      value={formData.content_en}
+                      onChange={(value) => setFormData(prev => ({ ...prev, content_en: value }))}
+                      placeholder="Write your blog content..."
+                    />
+                  </div>
+                </TabsContent>
 
-              <TabsContent value="id" className="space-y-4">
-                <div>
-                  <Label>Judul (H1)</Label>
-                  <Input
-                    value={formData.title_id}
-                    onChange={(e) => setFormData(prev => ({ ...prev, title_id: e.target.value }))}
-                    placeholder="Masukkan judul blog..."
+                <TabsContent value="id" className="space-y-4">
+                  <div>
+                    <Label>Judul (H1)</Label>
+                    <Input
+                      value={formData.title_id}
+                      onChange={(e) => setFormData(prev => ({ ...prev, title_id: e.target.value }))}
+                      placeholder="Masukkan judul blog..."
+                    />
+                  </div>
+                  <div>
+                    <Label>Ringkasan</Label>
+                    <Input
+                      value={formData.excerpt_id}
+                      onChange={(e) => setFormData(prev => ({ ...prev, excerpt_id: e.target.value }))}
+                      placeholder="Ringkasan singkat..."
+                    />
+                  </div>
+                  <div>
+                    <Label>Konten (Gunakan H1, H2, H3 untuk SEO)</Label>
+                    <RichTextEditor
+                      value={formData.content_id}
+                      onChange={(value) => setFormData(prev => ({ ...prev, content_id: value }))}
+                      placeholder="Tulis konten blog Anda..."
+                    />
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </div>
+
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Featured Image</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ImageUploader
+                    value={formData.featured_image}
+                    onChange={(url) => setFormData(prev => ({ ...prev, featured_image: url }))}
+                    folder="blogs"
                   />
-                </div>
-                <div>
-                  <Label>Ringkasan</Label>
-                  <Input
-                    value={formData.excerpt_id}
-                    onChange={(e) => setFormData(prev => ({ ...prev, excerpt_id: e.target.value }))}
-                    placeholder="Ringkasan singkat..."
-                  />
-                </div>
-                <div>
-                  <Label>Konten (Gunakan H1, H2, H3 untuk SEO)</Label>
-                  <RichTextEditor
-                    value={formData.content_id}
-                    onChange={(value) => setFormData(prev => ({ ...prev, content_id: value }))}
-                    placeholder="Tulis konten blog Anda..."
-                  />
-                </div>
-              </TabsContent>
-            </Tabs>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Details</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label>Slug</Label>
+                    <Input
+                      value={formData.slug}
+                      onChange={(e) => setFormData(prev => ({ ...prev, slug: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <Label>Category</Label>
+                    <Input
+                      value={formData.category}
+                      onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
+                      placeholder="e.g., Tips & Tricks"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>SEO</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label>Meta Title (EN)</Label>
+                    <Input
+                      value={formData.meta_title_en}
+                      onChange={(e) => setFormData(prev => ({ ...prev, meta_title_en: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <Label>Meta Title (ID)</Label>
+                    <Input
+                      value={formData.meta_title_id}
+                      onChange={(e) => setFormData(prev => ({ ...prev, meta_title_id: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <Label>Meta Description (EN)</Label>
+                    <Input
+                      value={formData.meta_description_en}
+                      onChange={(e) => setFormData(prev => ({ ...prev, meta_description_en: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <Label>Meta Description (ID)</Label>
+                    <Input
+                      value={formData.meta_description_id}
+                      onChange={(e) => setFormData(prev => ({ ...prev, meta_description_id: e.target.value }))}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </div>
-
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Featured Image</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ImageUploader
-                  value={formData.featured_image}
-                  onChange={(url) => setFormData(prev => ({ ...prev, featured_image: url }))}
-                  folder="blogs"
-                />
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Details</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label>Slug</Label>
-                  <Input
-                    value={formData.slug}
-                    onChange={(e) => setFormData(prev => ({ ...prev, slug: e.target.value }))}
-                  />
-                </div>
-                <div>
-                  <Label>Category</Label>
-                  <Input
-                    value={formData.category}
-                    onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-                    placeholder="e.g., Tips & Tricks"
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>SEO</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label>Meta Title (EN)</Label>
-                  <Input
-                    value={formData.meta_title_en}
-                    onChange={(e) => setFormData(prev => ({ ...prev, meta_title_en: e.target.value }))}
-                  />
-                </div>
-                <div>
-                  <Label>Meta Title (ID)</Label>
-                  <Input
-                    value={formData.meta_title_id}
-                    onChange={(e) => setFormData(prev => ({ ...prev, meta_title_id: e.target.value }))}
-                  />
-                </div>
-                <div>
-                  <Label>Meta Description (EN)</Label>
-                  <Input
-                    value={formData.meta_description_en}
-                    onChange={(e) => setFormData(prev => ({ ...prev, meta_description_en: e.target.value }))}
-                  />
-                </div>
-                <div>
-                  <Label>Meta Description (ID)</Label>
-                  <Input
-                    value={formData.meta_description_id}
-                    onChange={(e) => setFormData(prev => ({ ...prev, meta_description_id: e.target.value }))}
-                  />
-                </div>
-              </CardContent>
-            </Card>
+          
+          <div className="hidden xl:block sticky top-6">
+            {isNew ? (
+              <Card className="h-[600px] flex items-center justify-center">
+                <CardContent className="text-center text-muted-foreground">
+                  <p className="text-lg font-medium mb-2">Blog Preview</p>
+                  <p className="text-sm">Save the blog post to see preview</p>
+                </CardContent>
+              </Card>
+            ) : formData.slug ? (
+              <LivePreview 
+                path={`/blog/${formData.slug}`} 
+                title="Blog Preview" 
+              />
+            ) : (
+              <Card className="h-[600px] flex items-center justify-center">
+                <CardContent className="text-center text-muted-foreground">
+                  <p className="text-lg font-medium mb-2">Blog Preview</p>
+                  <p className="text-sm">Add a slug to see preview</p>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
       </div>

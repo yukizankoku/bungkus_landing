@@ -3,17 +3,31 @@ import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useSiteSetting } from '@/hooks/useSiteSettings';
 
 interface CTASectionProps {
   title?: string;
   subtitle?: string;
   primaryButton?: string;
   secondaryButton?: string;
+  primaryButtonLink?: string;
+  secondaryButtonLink?: string;
 }
 
-export function CTASection({ title, subtitle, primaryButton, secondaryButton }: CTASectionProps) {
+export function CTASection({ 
+  title, 
+  subtitle, 
+  primaryButton, 
+  secondaryButton,
+  primaryButtonLink,
+  secondaryButtonLink 
+}: CTASectionProps) {
   const { t } = useLanguage();
+  const { data: ctaDefaults } = useSiteSetting('cta_defaults');
 
+  // Use props first, then global defaults, then hardcoded fallbacks
+  const defaults = ctaDefaults?.value || {};
+  
   const displayTitle = title || t(
     'Siap Memulai Kemitraan dengan Kami?',
     'Ready to Start a Partnership with Us?'
@@ -22,8 +36,18 @@ export function CTASection({ title, subtitle, primaryButton, secondaryButton }: 
     'Hubungi kami sekarang untuk konsultasi gratis dan penawaran terbaik.',
     'Contact us now for free consultation and the best offers.'
   );
-  const displayPrimaryButton = primaryButton || t('Hubungi Kami', 'Contact Us');
-  const displaySecondaryButton = secondaryButton || t('Lihat Produk', 'View Products');
+  const displayPrimaryButton = primaryButton || t(
+    defaults.primary_button_text_id || 'Hubungi Kami', 
+    defaults.primary_button_text_en || 'Contact Us'
+  );
+  const displaySecondaryButton = secondaryButton || t(
+    defaults.secondary_button_text_id || 'Lihat Produk', 
+    defaults.secondary_button_text_en || 'View Products'
+  );
+  
+  // Links: props override global defaults
+  const primaryLink = primaryButtonLink || defaults.primary_button_link || '/hubungi-kami';
+  const secondaryLink = secondaryButtonLink || defaults.secondary_button_link || '/produk';
 
   return (
     <section className="py-16 bg-background">
@@ -42,13 +66,13 @@ export function CTASection({ title, subtitle, primaryButton, secondaryButton }: 
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button asChild size="lg" className="bg-white text-primary hover:bg-white/90 gap-2">
-                <Link to="/hubungi-kami">
+                <Link to={primaryLink}>
                   {displayPrimaryButton}
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>
               <Button asChild size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10 bg-transparent">
-                <Link to="/produk">
+                <Link to={secondaryLink}>
                   {displaySecondaryButton}
                 </Link>
               </Button>

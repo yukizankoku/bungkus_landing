@@ -10,14 +10,33 @@ import { usePageContent } from '@/hooks/usePageContent';
 
 export default function CaseStudies() {
   const { language, t } = useLanguage();
-  const { data: pageContent } = usePageContent('case-studies');
+  const { data: pageContent, isLoading } = usePageContent('case-studies');
+
+  if (isLoading) {
+    return (
+      <Layout>
+        <SEO title="Case Studies" description="Loading..." pageKey="case-studies" />
+        <section className="pt-32 pb-20 gradient-hero">
+          <div className="container mx-auto px-4 text-center">
+            <div className="h-12 w-64 mx-auto mb-6 bg-white/20 rounded animate-pulse" />
+            <div className="h-6 w-[400px] mx-auto bg-white/20 rounded animate-pulse" />
+          </div>
+        </section>
+      </Layout>
+    );
+  }
 
   const content = language === 'id' ? pageContent?.content_id : pageContent?.content_en;
+  
+  // Hero image should be shared across languages - use English as fallback
+  const heroImage = content?.hero?.image || pageContent?.content_en?.hero?.image;
 
-  // Fallback content
-  const hero = content?.hero || {
-    title: 'Case Studies',
-    subtitle: t('Temukan bagaimana bisnis lain berhasil dengan solusi kemasan kami.', 'Discover how other businesses have succeeded with our packaging solutions.')
+  const hero = { 
+    ...(content?.hero || {
+      title: 'Case Studies',
+      subtitle: t('Temukan bagaimana bisnis lain berhasil dengan solusi kemasan kami.', 'Discover how other businesses have succeeded with our packaging solutions.')
+    }),
+    image: heroImage 
   };
   const caseStudies = content?.caseStudies || [
     { id: 1, title: t('PT Makanan Nusantara - Transformasi Kemasan', 'PT Makanan Nusantara - Packaging Transformation'), excerpt: t('Bagaimana kami membantu perusahaan F&B besar meningkatkan efisiensi kemasan hingga 40%.', 'How we helped a large F&B company improve packaging efficiency by 40%.'), category: 'Corporate', industry: 'Food & Beverage' },
@@ -30,10 +49,16 @@ export default function CaseStudies() {
       <SEO
         title={content?.seo?.title || 'Case Studies'}
         description={content?.seo?.description || t('Cerita sukses klien Bungkus Indonesia dalam transformasi kemasan bisnis mereka.', 'Success stories of Bungkus Indonesia clients in transforming their business packaging.')}
+        pageKey="case-studies"
       />
 
       {/* Hero */}
-      <section className="pt-32 pb-20 gradient-hero">
+      <section 
+        className="pt-32 pb-20 gradient-hero relative bg-cover bg-center"
+        style={hero.image ? { 
+          backgroundImage: `linear-gradient(to right, hsl(var(--primary) / 0.9), hsl(var(--primary) / 0.7)), url(${hero.image})` 
+        } : undefined}
+      >
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto text-center">
             <h1 className="text-4xl sm:text-5xl font-display font-bold text-white mb-6">

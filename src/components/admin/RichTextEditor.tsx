@@ -13,6 +13,19 @@ import {
   Heading3
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import DOMPurify from 'dompurify';
+
+// Configure DOMPurify with allowed tags for rich text editing
+const ALLOWED_TAGS = ['h1', 'h2', 'h3', 'p', 'strong', 'em', 'u', 'ul', 'ol', 'li', 'blockquote', 'a', 'br', 'div', 'span'];
+const ALLOWED_ATTR = ['href', 'target', 'rel'];
+
+const sanitizeHtml = (html: string): string => {
+  return DOMPurify.sanitize(html, {
+    ALLOWED_TAGS,
+    ALLOWED_ATTR,
+    ALLOW_DATA_ATTR: false,
+  });
+};
 
 interface RichTextEditorProps {
   value: string;
@@ -29,10 +42,11 @@ export default function RichTextEditor({ value, onChange, placeholder, className
     document.execCommand(command, false, value);
     editorRef.current?.focus();
     
-    // Update the value after command execution
+    // Update the value after command execution with sanitization
     setTimeout(() => {
       if (editorRef.current) {
-        onChange(editorRef.current.innerHTML);
+        const sanitized = sanitizeHtml(editorRef.current.innerHTML);
+        onChange(sanitized);
       }
     }, 0);
   }, [onChange]);
@@ -43,14 +57,17 @@ export default function RichTextEditor({ value, onChange, placeholder, className
     
     setTimeout(() => {
       if (editorRef.current) {
-        onChange(editorRef.current.innerHTML);
+        const sanitized = sanitizeHtml(editorRef.current.innerHTML);
+        onChange(sanitized);
       }
     }, 0);
   }, [onChange]);
 
+  // Sanitize HTML before storing to prevent XSS attacks
   const handleInput = () => {
     if (editorRef.current) {
-      onChange(editorRef.current.innerHTML);
+      const sanitized = sanitizeHtml(editorRef.current.innerHTML);
+      onChange(sanitized);
     }
   };
 

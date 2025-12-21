@@ -17,15 +17,34 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
 
 export default function CorporateSolutions() {
   const { language, t } = useLanguage();
-  const { data: pageContent } = usePageContent('corporate-solutions');
+  const { data: pageContent, isLoading } = usePageContent('corporate-solutions');
+
+  if (isLoading) {
+    return (
+      <Layout>
+        <SEO title="Corporate Solutions" description="Loading..." pageKey="corporate-solutions" />
+        <section className="pt-32 pb-20 gradient-hero">
+          <div className="container mx-auto px-4 text-center">
+            <div className="h-12 w-96 mx-auto mb-6 bg-white/20 rounded animate-pulse" />
+            <div className="h-6 w-[500px] mx-auto bg-white/20 rounded animate-pulse" />
+          </div>
+        </section>
+      </Layout>
+    );
+  }
 
   const content = language === 'id' ? pageContent?.content_id : pageContent?.content_en;
+  
+  // Hero image should be shared across languages - use English as fallback
+  const heroImage = content?.hero?.image || pageContent?.content_en?.hero?.image;
 
-  // Fallback content
-  const hero = content?.hero || { 
-    title: t('Solusi Kemasan untuk Korporat', 'Packaging Solutions for Corporations'), 
-    subtitle: t('Kami menyediakan solusi kemasan berskala besar dengan kualitas konsisten untuk memenuhi kebutuhan industri Anda.', 'We provide large-scale packaging solutions with consistent quality to meet your industry needs.'),
-    buttonText: t('Jadwalkan Konsultasi', 'Schedule Consultation')
+  const hero = { 
+    ...(content?.hero || { 
+      title: t('Solusi Kemasan untuk Korporat', 'Packaging Solutions for Corporations'), 
+      subtitle: t('Kami menyediakan solusi kemasan berskala besar dengan kualitas konsisten untuk memenuhi kebutuhan industri Anda.', 'We provide large-scale packaging solutions with consistent quality to meet your industry needs.'),
+      buttonText: t('Jadwalkan Konsultasi', 'Schedule Consultation')
+    }),
+    image: heroImage 
   };
   const benefits = content?.benefits || [
     { icon: 'TrendingUp', title: t('Kapasitas Produksi Besar', 'Large Production Capacity'), description: t('Mampu memenuhi pesanan dalam jumlah besar dengan konsistensi kualitas.', 'Able to fulfill large orders with consistent quality.') },
@@ -47,10 +66,16 @@ export default function CorporateSolutions() {
       <SEO
         title={content?.seo?.title || t('Solusi Korporat', 'Corporate Solutions')}
         description={content?.seo?.description || t('Solusi kemasan untuk korporasi dengan kapasitas produksi besar dan layanan profesional.', 'Packaging solutions for corporations with large production capacity and professional services.')}
+        pageKey="corporate-solutions"
       />
 
       {/* Hero */}
-      <section className="pt-32 pb-20 gradient-hero">
+      <section 
+        className="pt-32 pb-20 gradient-hero relative bg-cover bg-center"
+        style={hero.image ? { 
+          backgroundImage: `linear-gradient(to right, hsl(var(--primary) / 0.9), hsl(var(--primary) / 0.7)), url(${hero.image})` 
+        } : undefined}
+      >
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto text-center">
             <h1 className="text-4xl sm:text-5xl font-display font-bold text-white mb-6">

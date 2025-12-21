@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Mail, Phone, MapPin, Instagram, Linkedin, Facebook, Youtube } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
-import logoWhite from '@/assets/logo-white.png';
+import logoWhiteFallback from '@/assets/logo-white.png';
 
 // X (Twitter) icon component
 const XIcon = ({ className }: { className?: string }) => (
@@ -18,6 +18,10 @@ export function Footer() {
 
   const socialSetting = settings?.find(s => s.key === 'social')?.value as { instagram?: string; facebook?: string; linkedin?: string; youtube?: string; twitter?: string } | undefined;
   const contactSetting = settings?.find(s => s.key === 'contact')?.value as { email?: string; phone?: string; address?: string } | undefined;
+  const logoSetting = settings?.find(s => s.key === 'logo')?.value as { light?: string; dark?: string } | undefined;
+  
+  // Use CMS dark logo for footer (light background text), fallback to static asset
+  const footerLogo = logoSetting?.dark || logoWhiteFallback;
 
   const quickLinks = [
     { href: '/', label: t('Beranda', 'Home') },
@@ -50,7 +54,7 @@ export function Footer() {
           {/* Brand */}
           <div className="lg:col-span-1">
             <Link to="/" className="inline-block mb-6">
-              <img src={logoWhite} alt="Bungkus Indonesia" className="h-16 w-auto" />
+              <img src={footerLogo} alt="Bungkus Indonesia" className="h-16 w-auto" />
             </Link>
             <p className="text-primary-foreground/80 text-sm leading-relaxed mb-6">
               {t(
