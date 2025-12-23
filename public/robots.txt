@@ -27,3 +27,6 @@ Allow: /
 Disallow: /admin
 Disallow: /admin/
 Disallow: /auth
+
+# Sitemap
+Sitemap: https://ahhhiqcnnwpfbgdggvct.supabase.co/functions/v1/sitemap

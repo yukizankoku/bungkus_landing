@@ -135,7 +135,7 @@ export default function RichTextEditor({ value, onChange, placeholder, className
         onBlur={() => setIsFocused(false)}
         dangerouslySetInnerHTML={{ __html: value }}
         className={cn(
-          "min-h-[300px] p-4 focus:outline-none prose prose-sm max-w-none",
+          "min-h-[300px] p-4 focus:outline-none prose prose-sm max-w-none rich-text-editor",
           "prose-headings:text-foreground prose-p:text-foreground prose-strong:text-foreground",
           "prose-blockquote:border-l-primary prose-blockquote:text-muted-foreground",
           "prose-ul:text-foreground prose-ol:text-foreground prose-li:text-foreground",
@@ -150,6 +150,38 @@ export default function RichTextEditor({ value, onChange, placeholder, className
           content: attr(data-placeholder);
           color: hsl(var(--muted-foreground));
           pointer-events: none;
+        }
+        
+        /* H1: Largest, with primary accent border */
+        .rich-text-editor h1 {
+          font-size: 1.875rem !important;
+          font-weight: 700 !important;
+          border-left: 4px solid hsl(var(--primary)) !important;
+          padding-left: 1rem !important;
+          padding-top: 0.5rem !important;
+          padding-bottom: 0.5rem !important;
+          background: hsl(var(--primary) / 0.05) !important;
+          margin-bottom: 1rem !important;
+        }
+        
+        /* H2: Medium, with bottom border */
+        .rich-text-editor h2 {
+          font-size: 1.5rem !important;
+          font-weight: 600 !important;
+          border-bottom: 2px solid hsl(var(--border)) !important;
+          padding-bottom: 0.5rem !important;
+          color: hsl(var(--primary)) !important;
+          margin-bottom: 0.75rem !important;
+        }
+        
+        /* H3: Smaller, with left border */
+        .rich-text-editor h3 {
+          font-size: 1.25rem !important;
+          font-weight: 600 !important;
+          border-left: 2px solid hsl(var(--muted-foreground)) !important;
+          padding-left: 0.75rem !important;
+          color: hsl(var(--muted-foreground)) !important;
+          margin-bottom: 0.5rem !important;
         }
       `}</style>
     </div>

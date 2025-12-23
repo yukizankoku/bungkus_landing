@@ -5,14 +5,16 @@ import DOMPurify from 'dompurify';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { SEO } from '@/components/common/SEO';
+import { SchemaMarkup } from '@/components/common/SchemaMarkup';
 import { Layout } from '@/components/layout/Layout';
-import { useBlog } from '@/hooks/useBlogs';
+import { useBlogBySlug } from '@/hooks/useBlogs';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useSiteSetting } from '@/hooks/useSiteSettings';
 
 export default function BlogPost() {
   const { slug } = useParams<{ slug: string }>();
   const { language, t } = useLanguage();
-  const { data: blog, isLoading } = useBlog(slug || '');
+  const { data: blog, isLoading } = useBlogBySlug(slug || '');
 
   if (isLoading) {
     return (
@@ -53,12 +55,38 @@ export default function BlogPost() {
   const content = language === 'id' ? blog.content_id : blog.content_en;
   const metaTitle = language === 'id' ? blog.meta_title_id : blog.meta_title_en;
   const metaDescription = language === 'id' ? blog.meta_description_id : blog.meta_description_en;
+  const excerpt = language === 'id' ? blog.excerpt_id : blog.excerpt_en;
+  
+  const { data: seoSettings } = useSiteSetting('seo');
+  const seo = seoSettings?.value as { site_url?: string } | undefined;
+  const baseUrl = seo?.site_url || 'https://bungkusindonesia.com';
+  const blogUrl = `${baseUrl}/blog/${slug}`;
 
   return (
     <Layout>
       <SEO
         title={metaTitle || title}
-        description={metaDescription || ''}
+        description={metaDescription || excerpt || ''}
+        url={blogUrl}
+        type="article"
+        image={blog.featured_image || undefined}
+        pageKey="blog"
+      />
+      
+      <SchemaMarkup 
+        type="article"
+        article={{
+          title: metaTitle || title,
+          description: metaDescription || excerpt || '',
+          image: blog.featured_image || undefined,
+          datePublished: blog.created_at || undefined,
+          dateModified: blog.updated_at || blog.created_at || undefined,
+        }}
+        breadcrumbs={[
+          { name: t('Beranda', 'Home'), url: '/' },
+          { name: 'Blog', url: '/blog' },
+          { name: title, url: `/blog/${slug}` },
+        ]}
       />
 
       {/* Hero Image */}

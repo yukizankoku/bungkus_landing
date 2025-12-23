@@ -5,7 +5,6 @@ import { useEffect } from 'react';
 interface SeoSettings {
   google_analytics_id?: string;
   google_tag_manager_id?: string;
-  google_search_console?: string;
   meta_pixel_id?: string;
   google_ads_id?: string;
   google_ads_conversion_label?: string;
@@ -20,7 +19,6 @@ export function TrackingScripts() {
 
   const gaId = seo?.google_analytics_id;
   const gtmId = seo?.google_tag_manager_id;
-  const gscVerification = seo?.google_search_console;
   const metaPixelId = seo?.meta_pixel_id;
   const googleAdsId = seo?.google_ads_id;
   const tiktokPixelId = seo?.tiktok_pixel_id;
@@ -74,7 +72,7 @@ export function TrackingScripts() {
     };
   }, [metaPixelId]);
 
-  const hasAnyTracking = gaId || gtmId || gscVerification || metaPixelId || googleAdsId || tiktokPixelId || metaDomainVerification || tiktokDomainVerification;
+  const hasAnyTracking = gaId || gtmId || metaPixelId || googleAdsId || tiktokPixelId || metaDomainVerification || tiktokDomainVerification;
 
   if (!hasAnyTracking) {
     return null;
@@ -83,9 +81,6 @@ export function TrackingScripts() {
   return (
     <Helmet>
       {/* Domain Verification Tags */}
-      {gscVerification && (
-        <meta name="google-site-verification" content={gscVerification} />
-      )}
       {metaDomainVerification && (
         <meta name="facebook-domain-verification" content={metaDomainVerification} />
       )}

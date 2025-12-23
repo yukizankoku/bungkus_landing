@@ -32,11 +32,12 @@ export function Footer() {
     { href: '/tentang-kami', label: t('Tentang Kami', 'About Us') },
   ];
 
+  // Only show contact items that exist in CMS - no hardcoded fallbacks
   const contactInfo = [
-    { icon: Mail, text: contactSetting?.email || 'info@bungkusindonesia.com', href: `mailto:${contactSetting?.email || 'info@bungkusindonesia.com'}` },
-    { icon: Phone, text: contactSetting?.phone || '+62 21 1234 5678', href: `tel:${contactSetting?.phone || '+622112345678'}` },
-    { icon: MapPin, text: contactSetting?.address || 'Jakarta, Indonesia', href: '#' },
-  ];
+    contactSetting?.email && { icon: Mail, text: contactSetting.email, href: `mailto:${contactSetting.email}` },
+    contactSetting?.phone && { icon: Phone, text: contactSetting.phone, href: `tel:${contactSetting.phone.replace(/\s/g, '')}` },
+    contactSetting?.address && { icon: MapPin, text: contactSetting.address, href: '#' },
+  ].filter(Boolean) as Array<{ icon: typeof Mail; text: string; href: string }>;
 
   // Only include social links that have a URL
   const socialLinks = [

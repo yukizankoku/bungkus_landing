@@ -14,7 +14,8 @@ import {
   X,
   ChevronRight,
   Home,
-  Globe
+  Globe,
+  Navigation
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -49,6 +50,16 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       href: '/admin/pages', 
       icon: FileText, 
       label: language === 'en' ? 'Pages' : 'Halaman' 
+    },
+    { 
+      href: '/admin/menus', 
+      icon: Navigation, 
+      label: language === 'en' ? 'Navigation' : 'Navigasi' 
+    },
+    { 
+      href: '/admin/custom-pages', 
+      icon: FileText, 
+      label: language === 'en' ? 'Custom Pages' : 'Halaman Kustom' 
     },
     { 
       href: '/admin/blogs', 

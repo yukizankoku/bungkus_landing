@@ -33,12 +33,17 @@ import AdminBlogEditor from "./pages/admin/AdminBlogEditor";
 import AdminLeads from "./pages/admin/AdminLeads";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminHomeEditor from "./pages/admin/AdminHomeEditor";
+import AdminMenus from "./pages/admin/AdminMenus";
+import AdminCustomPages from "./pages/admin/AdminCustomPages";
+import AdminCustomPageEditor from "./pages/admin/AdminCustomPageEditor";
+import CustomPage from "./pages/CustomPage";
 
 // Components
 import { PromoPopup } from "./components/common/PromoPopup";
 import { ScrollToTop } from "./components/common/ScrollToTop";
 import { DynamicFavicon } from "./components/common/DynamicFavicon";
 import { TrackingScripts } from "./components/common/TrackingScripts";
+import { SchemaMarkup } from "./components/common/SchemaMarkup";
 
 const queryClient = new QueryClient();
 
@@ -54,6 +59,7 @@ const App = () => (
             <BrowserRouter>
               <ScrollToTop />
               <DynamicFavicon />
+              <SchemaMarkup />
               <Routes>
                 {/* Public Routes */}
                 <Route path="/" element={<Home />} />
@@ -75,11 +81,17 @@ const App = () => (
                 <Route path="/admin/pages" element={<ProtectedRoute><AdminPages /></ProtectedRoute>} />
                 <Route path="/admin/pages/:pageKey" element={<ProtectedRoute><AdminPageEditor /></ProtectedRoute>} />
                 <Route path="/admin/home" element={<ProtectedRoute><AdminHomeEditor /></ProtectedRoute>} />
+                <Route path="/admin/menus" element={<ProtectedRoute><AdminMenus /></ProtectedRoute>} />
                 <Route path="/admin/blogs" element={<ProtectedRoute><AdminBlogs /></ProtectedRoute>} />
                 <Route path="/admin/blogs/new" element={<ProtectedRoute><AdminBlogEditor /></ProtectedRoute>} />
                 <Route path="/admin/blogs/:id" element={<ProtectedRoute><AdminBlogEditor /></ProtectedRoute>} />
                 <Route path="/admin/leads" element={<ProtectedRoute><AdminLeads /></ProtectedRoute>} />
                 <Route path="/admin/settings" element={<ProtectedRoute><AdminSettings /></ProtectedRoute>} />
+                <Route path="/admin/custom-pages" element={<ProtectedRoute><AdminCustomPages /></ProtectedRoute>} />
+                <Route path="/admin/custom-pages/:id" element={<ProtectedRoute><AdminCustomPageEditor /></ProtectedRoute>} />
+                
+                {/* Custom Pages Route */}
+                <Route path="/p/:slug" element={<CustomPage />} />
                 
                 <Route path="*" element={<NotFound />} />
               </Routes>

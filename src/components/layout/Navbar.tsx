@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
+import { useNavigationMenusHierarchy, NavigationMenu } from '@/hooks/useNavigationMenus';
 import logoWhite from '@/assets/logo-white.png';
 import logoDarkBlue from '@/assets/logo-dark-blue.png';
 import {
@@ -21,6 +22,7 @@ export function Navbar() {
   const { user, isAdmin } = useAuth();
   const location = useLocation();
   const { data: settings } = useSiteSettings();
+  const { data: dynamicMenus, isLoading: menusLoading } = useNavigationMenusHierarchy();
 
   const logoSetting = settings?.find(s => s.key === 'logo')?.value as { light?: string; dark?: string } | undefined;
 
@@ -34,7 +36,8 @@ export function Navbar() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const navLinks = [
+  // Fallback navigation links (used when database is loading or empty)
+  const fallbackNavLinks = [
     { href: '/', label: t('Beranda', 'Home') },
     {
       label: t('Solusi', 'Solutions'),
@@ -54,6 +57,31 @@ export function Navbar() {
     { href: '/blog', label: 'Blog' },
     { href: '/tentang-kami', label: t('Tentang Kami', 'About Us') },
   ];
+
+  // Transform database menus to nav link format
+  const transformMenuToNavLink = (menu: NavigationMenu): { href?: string; label: string; children?: { href: string; label: string }[] } => {
+    const label = language === 'id' ? menu.label_id : menu.label_en;
+    
+    if (menu.children && menu.children.length > 0) {
+      return {
+        label,
+        children: menu.children.map(child => ({
+          href: child.href || '#',
+          label: language === 'id' ? child.label_id : child.label_en,
+        })),
+      };
+    }
+    
+    return {
+      href: menu.href || '/',
+      label,
+    };
+  };
+
+  // Use dynamic menus if available, otherwise fallback
+  const navLinks = dynamicMenus && dynamicMenus.length > 0
+    ? dynamicMenus.map(transformMenuToNavLink)
+    : fallbackNavLinks;
 
   const navBg = isHome && !isScrolled 
     ? 'bg-transparent' 
@@ -83,7 +111,7 @@ export function Navbar() {
           {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center gap-1">
             {navLinks.map((link, index) => (
-              link.children ? (
+              'children' in link && link.children ? (
                 <DropdownMenu key={index}>
                   <DropdownMenuTrigger asChild>
                     <button className={`nav-item-3d flex items-center gap-1 px-4 py-2 text-sm font-medium ${textColor} hover:text-secondary transition-all`}>
@@ -104,7 +132,7 @@ export function Navbar() {
               ) : (
                 <Link
                   key={link.href}
-                  to={link.href}
+                  to={link.href!}
                   className={`nav-item-3d px-4 py-2 text-sm font-medium ${textColor} hover:text-secondary transition-all ${
                     location.pathname === link.href ? 'text-secondary' : ''
                   }`}
@@ -169,7 +197,7 @@ export function Navbar() {
           <div className="container mx-auto px-4 py-4">
             <div className="flex flex-col gap-2">
               {navLinks.map((link, index) => (
-                link.children ? (
+                'children' in link && link.children ? (
                   <div key={index} className="py-2">
                     <span className="text-sm font-medium text-muted-foreground px-3">
                       {link.label}
@@ -194,7 +222,7 @@ export function Navbar() {
                 ) : (
                   <Link
                     key={link.href}
-                    to={link.href}
+                    to={link.href!}
                     className={`px-3 py-2 text-sm font-medium transition-colors rounded-md ${
                       location.pathname === link.href 
                         ? 'text-secondary bg-secondary/10' 
