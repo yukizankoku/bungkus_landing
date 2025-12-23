@@ -1,12 +1,7 @@
 export default async function handler(req, res) {
   try {
     const response = await fetch(
-      "https://ahhhiqcnnwpbfqdggvct.supabase.co/functions/v1/sitemap",
-      {
-        headers: {
-          "Content-Type": "application/xml",
-        },
-      }
+      "https://PROJECT_ID.supabase.co/storage/v1/object/public/seo/sitemap.xml"
     );
 
     if (!response.ok) {
@@ -19,10 +14,6 @@ export default async function handler(req, res) {
     res.status(200).send(xml);
   } catch (error) {
     console.error("SITEMAP ERROR:", error);
-
-    res.status(500).json({
-      error: "Sitemap function crashed",
-      message: error.message,
-    });
+    res.status(500).send("Sitemap unavailable");
   }
 }
