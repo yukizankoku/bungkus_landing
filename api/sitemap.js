@@ -1,7 +1,7 @@
 export default async function handler(req, res) {
   try {
     const response = await fetch(
-      "https://PROJECT_ID.supabase.co/storage/v1/object/public/seo/sitemap.xml"
+      "https://ahhhiqcnnwpfbgdggvct.supabase.co/storage/v1/object/public/seo/sitemap.xml"
     );
 
     if (!response.ok) {
