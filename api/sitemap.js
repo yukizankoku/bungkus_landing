@@ -1,10 +1,28 @@
 export default async function handler(req, res) {
-  const response = await fetch(
-    "https://ahhhiqcnnwpbfqdggvct.supabase.co/functions/v1/sitemap"
-  );
+  try {
+    const response = await fetch(
+      "https://ahhhiqcnnwpbfqdggvct.supabase.co/functions/v1/sitemap",
+      {
+        headers: {
+          "Content-Type": "application/xml",
+        },
+      }
+    );
 
-  const xml = await response.text();
+    if (!response.ok) {
+      throw new Error(`Fetch failed: ${response.status}`);
+    }
 
-  res.setHeader("Content-Type", "application/xml");
-  res.status(200).send(xml);
+    const xml = await response.text();
+
+    res.setHeader("Content-Type", "application/xml");
+    res.status(200).send(xml);
+  } catch (error) {
+    console.error("SITEMAP ERROR:", error);
+
+    res.status(500).json({
+      error: "Sitemap function crashed",
+      message: error.message,
+    });
+  }
 }
