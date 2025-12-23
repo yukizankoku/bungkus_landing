@@ -13,7 +13,7 @@ export default async function handler(req, res) {
     const xmlData = await response.text()
 
     res.setHeader('Content-Type', 'application/xml')
-    res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate')
+    res.setHeader('Cache-Control', 'no-cache')
     res.status(200).send(xmlData)
   } catch (error) {
     console.error('Sitemap error:', error)
