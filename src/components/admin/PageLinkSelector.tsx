@@ -1,5 +1,4 @@
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
+import React, { useState, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -9,10 +8,13 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  SelectGroup,
+  SelectLabel,
 } from '@/components/ui/select';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { usePublishedCustomPages } from '@/hooks/useCustomPages';
 
-const pages = [
+const fixedPages = [
   { value: '/', label: { en: 'Home', id: 'Beranda' } },
   { value: '/produk', label: { en: 'Products', id: 'Produk' } },
   { value: '/produk/katalog', label: { en: 'Product Catalog', id: 'Katalog Produk' } },
@@ -20,7 +22,7 @@ const pages = [
   { value: '/solusi-umkm', label: { en: 'UMKM Solutions', id: 'Solusi UMKM' } },
   { value: '/tentang-kami', label: { en: 'About Us', id: 'Tentang Kami' } },
   { value: '/blog', label: { en: 'Blog', id: 'Blog' } },
-  { value: '/kontak', label: { en: 'Contact', id: 'Kontak' } },
+  { value: '/hubungi-kami', label: { en: 'Contact', id: 'Kontak' } },
   { value: '/studi-kasus', label: { en: 'Case Studies', id: 'Studi Kasus' } },
 ];
 
@@ -32,9 +34,32 @@ interface PageLinkSelectorProps {
 
 export default function PageLinkSelector({ value, onChange, label }: PageLinkSelectorProps) {
   const { language } = useLanguage();
+  const { data: customPages } = usePublishedCustomPages();
+  
+  // Build combined list of fixed pages + custom pages
+  const allPages = useMemo(() => {
+    const pages = [...fixedPages];
+    
+    // Add custom pages with /p/ prefix
+    if (customPages && customPages.length > 0) {
+      customPages.forEach(page => {
+        pages.push({
+          value: `/p/${page.slug}`,
+          label: {
+            en: `📄 ${page.title_en}`,
+            id: `📄 ${page.title_id}`
+          }
+        });
+      });
+    }
+    
+    return pages;
+  }, [customPages]);
+  
   const [isCustomUrl, setIsCustomUrl] = useState(() => {
     // Check if the current value is a custom URL (not in the pages list)
-    return value ? !pages.some(p => p.value === value) : false;
+    if (!value) return false;
+    return !allPages.some(p => p.value === value);
   });
   
   const handlePageSelect = (pageValue: string) => {
@@ -78,12 +103,29 @@ export default function PageLinkSelector({ value, onChange, label }: PageLinkSel
           <SelectTrigger className="bg-background">
             <SelectValue placeholder={language === 'en' ? 'Select a page' : 'Pilih halaman'} />
           </SelectTrigger>
-          <SelectContent className="bg-background border shadow-lg z-50">
-            {pages.map((page) => (
-              <SelectItem key={page.value} value={page.value}>
-                {page.label[language as 'en' | 'id']}
-              </SelectItem>
-            ))}
+          <SelectContent className="bg-background border shadow-lg z-50 max-h-[300px]">
+            <SelectGroup>
+              <SelectLabel className="text-muted-foreground font-medium">
+                {language === 'en' ? 'Fixed Pages' : 'Halaman Tetap'}
+              </SelectLabel>
+              {fixedPages.map((page) => (
+                <SelectItem key={page.value} value={page.value}>
+                  {page.label[language as 'en' | 'id']}
+                </SelectItem>
+              ))}
+            </SelectGroup>
+            {customPages && customPages.length > 0 && (
+              <SelectGroup>
+                <SelectLabel className="text-muted-foreground font-medium mt-2">
+                  {language === 'en' ? 'Custom Pages' : 'Halaman Kustom'}
+                </SelectLabel>
+                {customPages.map((page) => (
+                  <SelectItem key={page.id} value={`/p/${page.slug}`}>
+                    📄 {language === 'en' ? page.title_en : page.title_id}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            )}
           </SelectContent>
         </Select>
       )}

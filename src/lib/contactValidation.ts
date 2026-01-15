@@ -20,9 +20,29 @@ const BLOCKED_PATTERNS = [
   /<object/i,
 ];
 
+// Enhanced blocked patterns for short messages
+const ENHANCED_BLOCKED_PATTERNS = [
+  // URL patterns - block all URLs in short messages
+  /https?:\/\//i,
+  /www\./i,
+  /\.com\b/i,
+  /\.net\b/i,
+  /\.org\b/i,
+  /\.io\b/i,
+  // Excessive repetition (same char 5+ times)
+  /(.)\1{4,}/,
+  // Base64-like patterns (long alphanumeric without spaces)
+  /^[A-Za-z0-9+/=]{20,}$/,
+];
+
 // Check if text contains blocked patterns
 function containsBlockedPatterns(text: string): boolean {
   return BLOCKED_PATTERNS.some(pattern => pattern.test(text));
+}
+
+// Check for enhanced patterns (for message field)
+function containsEnhancedBlockedPatterns(text: string): boolean {
+  return ENHANCED_BLOCKED_PATTERNS.some(pattern => pattern.test(text));
 }
 
 // Sanitize and validate text input
@@ -33,6 +53,9 @@ function sanitizeText(text: string): string {
 
 // Indonesian phone number regex (supports various formats)
 const PHONE_REGEX = /^(\+62|62|0)?[1-9][0-9]{7,12}$/;
+
+// Message max length - reduced for security
+const MESSAGE_MAX_LENGTH = 50;
 
 // Contact form validation schema with enhanced security
 export const contactSchema = z.object({
@@ -85,9 +108,12 @@ export const contactSchema = z.object({
     .transform(sanitizeText)
     .pipe(
       z.string()
-        .max(2000, { message: 'Message must be less than 2000 characters' })
+        .max(MESSAGE_MAX_LENGTH, { message: `Message must be less than ${MESSAGE_MAX_LENGTH} characters` })
         .refine(val => !containsBlockedPatterns(val), { 
           message: 'Invalid content detected in message' 
+        })
+        .refine(val => !containsEnhancedBlockedPatterns(val), { 
+          message: 'Invalid content pattern detected' 
         })
     )
     .optional()
@@ -101,15 +127,21 @@ export const contactSchemaWithMessage = contactSchema.extend({
     .transform(sanitizeText)
     .pipe(
       z.string()
-        .min(10, { message: 'Message must be at least 10 characters' })
-        .max(2000, { message: 'Message must be less than 2000 characters' })
+        .min(3, { message: 'Message must be at least 3 characters' })
+        .max(MESSAGE_MAX_LENGTH, { message: `Message must be less than ${MESSAGE_MAX_LENGTH} characters` })
         .refine(val => !containsBlockedPatterns(val), { 
           message: 'Invalid content detected in message' 
+        })
+        .refine(val => !containsEnhancedBlockedPatterns(val), { 
+          message: 'Invalid content pattern detected' 
         })
     ),
 });
 
 export type ContactFormData = z.infer<typeof contactSchema>;
+
+// Export max length for UI
+export const MESSAGE_MAX_CHARS = MESSAGE_MAX_LENGTH;
 
 // Map database errors to user-friendly messages
 export function mapDatabaseError(error: any): string {
@@ -132,7 +164,7 @@ export function mapDatabaseError(error: any): string {
   // Validation errors from database triggers
   if (error?.code === 'P0002') return 'Please enter a valid name (2-100 characters).';
   if (error?.code === 'P0003') return 'Please enter a valid email address.';
-  if (error?.code === 'P0004') return 'Please enter a valid message (10-2000 characters).';
+  if (error?.code === 'P0004') return `Please enter a valid message (3-${MESSAGE_MAX_LENGTH} characters, no URLs).`;
   if (error?.code === 'P0005') return 'Please check your phone or company field.';
   
   return 'An error occurred. Please try again later.';

@@ -12,6 +12,7 @@ import ImageUploader from '@/components/admin/ImageUploader';
 import LivePreview from '@/components/admin/LivePreview';
 import IconSelector from '@/components/admin/IconSelector';
 import PageLinkSelector from '@/components/admin/PageLinkSelector';
+import SEOAudit from '@/components/admin/SEOAudit';
 import { usePageContent, useUpdatePageContent } from '@/hooks/usePageContent';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -111,8 +112,10 @@ export default function AdminHomeEditor() {
             <h1 className="text-2xl font-display font-bold">Edit Home Page</h1>
             <p className="text-muted-foreground">Manage all sections of your home page</p>
           </div>
-          <Button onClick={handleSave} disabled={updatePageContent.isPending}>
-            <Save className="h-4 w-4 mr-2" />
+          <Button onClick={handleSave} disabled={updatePageContent.isPending} className="min-w-[140px]">
+            <span className="w-4 h-4 mr-2 inline-flex items-center justify-center">
+              <Save className="h-4 w-4" />
+            </span>
             {updatePageContent.isPending ? 'Saving...' : 'Save Changes'}
           </Button>
         </div>
@@ -549,7 +552,10 @@ export default function AdminHomeEditor() {
                     />
                   </div>
                   <div className="space-y-4">
-                    <Label>Products</Label>
+                    <div className="flex items-center justify-between">
+                      <Label>Products</Label>
+                      <span className="text-xs text-muted-foreground">Images sync across languages</span>
+                    </div>
                     {(contentEn.products?.items || []).map((item: any, index: number) => (
                       <div key={index} className="p-4 border rounded-lg space-y-3">
                         <div className="flex items-center justify-between">
@@ -557,14 +563,20 @@ export default function AdminHomeEditor() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => removeArrayItem('en', 'products', 'items', index)}
+                            onClick={() => {
+                              removeArrayItem('en', 'products', 'items', index);
+                              removeArrayItem('id', 'products', 'items', index);
+                            }}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
                         <ImageUploader
                           value={item.image || ''}
-                          onChange={(url) => updateArrayItem('en', 'products', 'items', index, 'image', url)}
+                          onChange={(url) => {
+                            updateArrayItem('en', 'products', 'items', index, 'image', url);
+                            updateArrayItem('id', 'products', 'items', index, 'image', url);
+                          }}
                         />
                         <Input
                           placeholder="Name"
@@ -580,7 +592,10 @@ export default function AdminHomeEditor() {
                     ))}
                     <Button
                       variant="outline"
-                      onClick={() => addArrayItem('en', 'products', 'items', { image: '', name: '', description: '' })}
+                      onClick={() => {
+                        addArrayItem('en', 'products', 'items', { image: '', name: '', description: '' });
+                        addArrayItem('id', 'products', 'items', { image: '', name: '', description: '' });
+                      }}
                     >
                       <Plus className="h-4 w-4 mr-2" />
                       Add Product
@@ -609,23 +624,20 @@ export default function AdminHomeEditor() {
                     />
                   </div>
                   <div className="space-y-4">
-                    <Label>Products</Label>
+                    <div className="flex items-center justify-between">
+                      <Label>Products</Label>
+                      <span className="text-xs text-muted-foreground">Images managed in English tab</span>
+                    </div>
                     {(contentId.products?.items || []).map((item: any, index: number) => (
                       <div key={index} className="p-4 border rounded-lg space-y-3">
                         <div className="flex items-center justify-between">
                           <span className="font-medium">Product {index + 1}</span>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeArrayItem('id', 'products', 'items', index)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
                         </div>
-                        <ImageUploader
-                          value={item.image || ''}
-                          onChange={(url) => updateArrayItem('id', 'products', 'items', index, 'image', url)}
-                        />
+                        {item.image && (
+                          <div className="w-full h-32 rounded-lg overflow-hidden bg-muted">
+                            <img src={item.image} alt="" className="w-full h-full object-cover" />
+                          </div>
+                        )}
                         <Input
                           placeholder="Name"
                           value={item.name || ''}
@@ -638,13 +650,6 @@ export default function AdminHomeEditor() {
                         />
                       </div>
                     ))}
-                    <Button
-                      variant="outline"
-                      onClick={() => addArrayItem('id', 'products', 'items', { image: '', name: '', description: '' })}
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Product
-                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -1084,6 +1089,9 @@ export default function AdminHomeEditor() {
                       value={contentEn.meta_title || ''}
                       onChange={(e) => setContentEn(prev => ({ ...prev, meta_title: e.target.value }))}
                     />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {(contentEn.meta_title || '').length}/60 characters
+                    </p>
                   </div>
                   <div>
                     <Label>Meta Description</Label>
@@ -1091,6 +1099,9 @@ export default function AdminHomeEditor() {
                       value={contentEn.meta_description || ''}
                       onChange={(e) => setContentEn(prev => ({ ...prev, meta_description: e.target.value }))}
                     />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {(contentEn.meta_description || '').length}/160 characters
+                    </p>
                   </div>
                 </CardContent>
               </Card>
@@ -1106,6 +1117,9 @@ export default function AdminHomeEditor() {
                       value={contentId.meta_title || ''}
                       onChange={(e) => setContentId(prev => ({ ...prev, meta_title: e.target.value }))}
                     />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {(contentId.meta_title || '').length}/60 characters
+                    </p>
                   </div>
                   <div>
                     <Label>Meta Description</Label>
@@ -1113,9 +1127,30 @@ export default function AdminHomeEditor() {
                       value={contentId.meta_description || ''}
                       onChange={(e) => setContentId(prev => ({ ...prev, meta_description: e.target.value }))}
                     />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {(contentId.meta_description || '').length}/160 characters
+                    </p>
                   </div>
                 </CardContent>
               </Card>
+            </div>
+
+            {/* SEO Audit */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <SEOAudit
+                title={contentEn.hero?.title || ''}
+                metaTitle={contentEn.meta_title || contentEn.hero?.title || ''}
+                metaDescription={contentEn.meta_description || contentEn.hero?.subtitle || ''}
+                content={JSON.stringify(contentEn)}
+                language="en"
+              />
+              <SEOAudit
+                title={contentId.hero?.title || ''}
+                metaTitle={contentId.meta_title || contentId.hero?.title || ''}
+                metaDescription={contentId.meta_description || contentId.hero?.subtitle || ''}
+                content={JSON.stringify(contentId)}
+                language="id"
+              />
             </div>
           </TabsContent>
             </Tabs>

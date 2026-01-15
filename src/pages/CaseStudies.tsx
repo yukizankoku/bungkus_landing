@@ -1,12 +1,51 @@
 import React from 'react';
 import { ArrowRight } from 'lucide-react';
-import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { SEO } from '@/components/common/SEO';
 import { Layout } from '@/components/layout/Layout';
 import { CTASection } from '@/components/home/CTASection';
 import { usePageContent } from '@/hooks/usePageContent';
+import { Skeleton } from '@/components/ui/skeleton';
+
+function CaseStudiesPageSkeleton() {
+  return (
+    <>
+      {/* Hero Skeleton */}
+      <section className="pt-32 pb-20 gradient-hero">
+        <div className="container mx-auto px-4">
+          <div className="max-w-3xl mx-auto text-center">
+            <Skeleton className="h-12 w-56 mx-auto mb-6 bg-white/20" />
+            <Skeleton className="h-6 w-full max-w-md mx-auto bg-white/20" />
+          </div>
+        </div>
+      </section>
+
+      {/* Case Studies Grid Skeleton */}
+      <section className="py-24 bg-background">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="rounded-2xl border border-border overflow-hidden">
+                <Skeleton className="aspect-video" />
+                <div className="p-6">
+                  <div className="flex gap-2 mb-4">
+                    <Skeleton className="h-6 w-20 rounded-full" />
+                    <Skeleton className="h-6 w-28 rounded-full" />
+                  </div>
+                  <Skeleton className="h-6 w-full mb-3" />
+                  <Skeleton className="h-4 w-full mb-2" />
+                  <Skeleton className="h-4 w-3/4 mb-4" />
+                  <Skeleton className="h-5 w-32" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    </>
+  );
+}
 
 export default function CaseStudies() {
   const { language, t } = useLanguage();
@@ -15,13 +54,8 @@ export default function CaseStudies() {
   if (isLoading) {
     return (
       <Layout>
-        <SEO title="Case Studies" description="Loading..." pageKey="case-studies" />
-        <section className="pt-32 pb-20 gradient-hero">
-          <div className="container mx-auto px-4 text-center">
-            <div className="h-12 w-64 mx-auto mb-6 bg-white/20 rounded animate-pulse" />
-            <div className="h-6 w-[400px] mx-auto bg-white/20 rounded animate-pulse" />
-          </div>
-        </section>
+        <SEO title="Case Studies" description="" pageKey="case-studies" />
+        <CaseStudiesPageSkeleton />
       </Layout>
     );
   }
@@ -31,18 +65,10 @@ export default function CaseStudies() {
   // Hero image should be shared across languages - use English as fallback
   const heroImage = content?.hero?.image || pageContent?.content_en?.hero?.image;
 
-  const hero = { 
-    ...(content?.hero || {
-      title: 'Case Studies',
-      subtitle: t('Temukan bagaimana bisnis lain berhasil dengan solusi kemasan kami.', 'Discover how other businesses have succeeded with our packaging solutions.')
-    }),
-    image: heroImage 
-  };
-  const caseStudies = content?.caseStudies || [
-    { id: 1, title: t('PT Makanan Nusantara - Transformasi Kemasan', 'PT Makanan Nusantara - Packaging Transformation'), excerpt: t('Bagaimana kami membantu perusahaan F&B besar meningkatkan efisiensi kemasan hingga 40%.', 'How we helped a large F&B company improve packaging efficiency by 40%.'), category: 'Corporate', industry: 'Food & Beverage' },
-    { id: 2, title: t('Dapur Mama Siti - Dari UMKM ke Brand Nasional', 'Dapur Mama Siti - From SME to National Brand'), excerpt: t('Cerita sukses UMKM kuliner yang berkembang dengan kemasan yang tepat.', 'Success story of a culinary SME that grew with the right packaging.'), category: 'UMKM', industry: 'Culinary' },
-    { id: 3, title: t('Coffee Chain - Rebranding dengan Kemasan Baru', 'Coffee Chain - Rebranding with New Packaging'), excerpt: t('Proyek rebranding lengkap dengan kemasan custom untuk jaringan kopi premium.', 'Complete rebranding project with custom packaging for premium coffee chain.'), category: 'Corporate', industry: 'Coffee & Beverages' },
-  ];
+  const heroTitle = content?.hero?.title || 'Case Studies';
+  const heroSubtitle = content?.hero?.subtitle || t('Temukan bagaimana bisnis lain berhasil dengan solusi kemasan kami.', 'Discover how other businesses have succeeded with our packaging solutions.');
+  
+  const caseStudies = content?.caseStudies || [];
 
   return (
     <Layout>
@@ -55,59 +81,74 @@ export default function CaseStudies() {
       {/* Hero */}
       <section 
         className="pt-32 pb-20 gradient-hero relative bg-cover bg-center"
-        style={hero.image ? { 
-          backgroundImage: `linear-gradient(to right, hsl(var(--primary) / 0.9), hsl(var(--primary) / 0.7)), url(${hero.image})` 
+        style={heroImage ? { 
+          backgroundImage: `linear-gradient(to right, hsl(var(--primary) / 0.9), hsl(var(--primary) / 0.7)), url(${heroImage})` 
         } : undefined}
       >
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto text-center">
             <h1 className="text-4xl sm:text-5xl font-display font-bold text-white mb-6">
-              {hero.title}
+              {heroTitle}
             </h1>
             <p className="text-lg text-white/80">
-              {hero.subtitle}
+              {heroSubtitle}
             </p>
           </div>
         </div>
       </section>
 
       {/* Case Studies Grid */}
-      <section className="py-24 bg-background">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {caseStudies.map((study: any) => (
-              <div
-                key={study.id}
-                className="group rounded-2xl bg-card border border-border overflow-hidden hover:border-secondary/50 transition-all duration-300 hover-lift"
-              >
-                <div className="aspect-video bg-gradient-to-br from-primary/20 to-secondary/20" />
-                <div className="p-6">
-                  <div className="flex gap-2 mb-4">
-                    <span className="px-3 py-1 bg-secondary/10 text-secondary text-xs font-medium rounded-full">
-                      {study.category}
-                    </span>
-                    <span className="px-3 py-1 bg-muted text-muted-foreground text-xs font-medium rounded-full">
-                      {study.industry}
-                    </span>
+      {caseStudies.length > 0 ? (
+        <section className="py-24 bg-background">
+          <div className="container mx-auto px-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {caseStudies.map((study: any) => (
+                <div
+                  key={study.id}
+                  className="group rounded-2xl bg-card border border-border overflow-hidden hover:border-secondary/50 transition-all duration-300 hover-lift"
+                >
+                  <div className="aspect-video bg-gradient-to-br from-primary/20 to-secondary/20" />
+                  <div className="p-6">
+                    <div className="flex gap-2 mb-4">
+                      <span className="px-3 py-1 bg-secondary/10 text-secondary text-xs font-medium rounded-full">
+                        {study.category}
+                      </span>
+                      <span className="px-3 py-1 bg-muted text-muted-foreground text-xs font-medium rounded-full">
+                        {study.industry}
+                      </span>
+                    </div>
+                    <h3 className="text-xl font-display font-semibold text-foreground mb-3 group-hover:text-secondary transition-colors">
+                      {study.title}
+                    </h3>
+                    <p className="text-muted-foreground text-sm mb-4">
+                      {study.excerpt}
+                    </p>
+                    <Button variant="ghost" size="sm" className="gap-2 p-0 h-auto text-secondary hover:text-secondary/80">
+                      {t('Baca Selengkapnya', 'Read More')}
+                      <ArrowRight className="h-4 w-4" />
+                    </Button>
                   </div>
-                  <h3 className="text-xl font-display font-semibold text-foreground mb-3 group-hover:text-secondary transition-colors">
-                    {study.title}
-                  </h3>
-                  <p className="text-muted-foreground text-sm mb-4">
-                    {study.excerpt}
-                  </p>
-                  <Button variant="ghost" size="sm" className="gap-2 p-0 h-auto text-secondary hover:text-secondary/80">
-                    {t('Baca Selengkapnya', 'Read More')}
-                    <ArrowRight className="h-4 w-4" />
-                  </Button>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      ) : (
+        <section className="py-24 bg-background">
+          <div className="container mx-auto px-4 text-center">
+            <p className="text-muted-foreground">{t('Belum ada case study.', 'No case studies yet.')}</p>
+          </div>
+        </section>
+      )}
 
-      <CTASection />
+      <CTASection 
+        title={content?.cta?.title}
+        subtitle={content?.cta?.subtitle}
+        primaryButton={content?.cta?.primary_button}
+        secondaryButton={content?.cta?.secondary_button}
+        primaryButtonLink={content?.cta?.primary_button_link}
+        secondaryButtonLink={content?.cta?.secondary_button_link}
+      />
     </Layout>
   );
 }

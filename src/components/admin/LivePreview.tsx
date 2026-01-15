@@ -88,7 +88,7 @@ export default function LivePreview({ path, title = 'Live Preview' }: LivePrevie
               src={previewUrl}
               className="w-full h-full border-0"
               title={title}
-              sandbox="allow-same-origin allow-scripts allow-forms"
+              sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox"
             />
           </div>
         </div>

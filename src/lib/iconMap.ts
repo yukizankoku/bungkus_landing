@@ -1,0 +1,50 @@
+import { 
+  Package, Shield, Users, Zap, Building2, TrendingUp, Truck, Award,
+  DollarSign, Lightbulb, Heart, Sparkles, Target, Eye, Compass,
+  Coffee, ShoppingBag, Recycle, Leaf, Star, CheckCircle, Clock,
+  Globe, Phone, Mail, MapPin, Calendar, FileText, Image, Video,
+  Settings, Search, Filter, Grid, List, Gift, Palette, LucideIcon
+} from 'lucide-react';
+
+// Comprehensive icon map with all icons available in IconSelector
+export const iconMap: Record<string, LucideIcon> = {
+  Package,
+  Shield,
+  Users,
+  Zap,
+  Building2,
+  TrendingUp,
+  Truck,
+  Award,
+  DollarSign,
+  Lightbulb,
+  Heart,
+  Sparkles,
+  Target,
+  Eye,
+  Compass,
+  Coffee,
+  ShoppingBag,
+  Recycle,
+  Leaf,
+  Star,
+  CheckCircle,
+  Clock,
+  Globe,
+  Phone,
+  Mail,
+  MapPin,
+  Calendar,
+  FileText,
+  Image,
+  Video,
+  Settings,
+  Search,
+  Filter,
+  Grid,
+  List,
+  Gift,
+  Palette,
+};
+
+export type IconName = keyof typeof iconMap;

@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 
 interface HeroContent {
@@ -21,36 +20,69 @@ interface HeroCarouselProps {
 }
 
 export function HeroCarousel({ content }: HeroCarouselProps) {
-  const { t, language } = useLanguage();
   const [currentSlide, setCurrentSlide] = useState(0);
+  const touchStartX = useRef<number | null>(null);
+  const touchEndX = useRef<number | null>(null);
 
-  const defaultImages = [
-    'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=1920',
-    'https://images.unsplash.com/photo-1604719312566-8912e9227c6a?w=1920',
-    'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1920'
-  ];
+  // If no content provided, don't render (parent shows skeleton)
+  if (!content) {
+    return null;
+  }
 
-  const images = content?.images?.length ? content.images : defaultImages;
-  const title = content?.title || t('Solusi Kemasan untuk Bisnis Indonesia', 'Packaging Solutions for Indonesian Businesses');
-  const subtitle = content?.subtitle || t('Dari korporasi hingga UMKM, kami menyediakan kemasan berkualitas.', 'From corporations to SMEs, we provide quality packaging.');
-  const badge = content?.badge || t('Mitra Kemasan Terpercaya', 'Your Trusted Packaging Partner');
-  const ctaPrimary = content?.cta_primary || t('Solusi Korporat', 'Corporate Solutions');
-  const ctaSecondary = content?.cta_secondary || t('Solusi UMKM', 'SME Solutions');
-  const ctaPrimaryLink = content?.cta_primary_link || '/solusi-korporat';
-  const ctaSecondaryLink = content?.cta_secondary_link || '/solusi-umkm';
+  const images = content.images?.length ? content.images : [];
+  const title = content.title || '';
+  const subtitle = content.subtitle || '';
+  const badge = content.badge || '';
+  const ctaPrimary = content.cta_primary || '';
+  const ctaSecondary = content.cta_secondary || '';
+  const ctaPrimaryLink = content.cta_primary_link || '/hubungi-kami';
+  const ctaSecondaryLink = content.cta_secondary_link || '/produk';
 
   const nextSlide = useCallback(() => {
-    setCurrentSlide((prev) => (prev + 1) % images.length);
+    if (images.length > 0) {
+      setCurrentSlide((prev) => (prev + 1) % images.length);
+    }
   }, [images.length]);
 
   const prevSlide = useCallback(() => {
-    setCurrentSlide((prev) => (prev - 1 + images.length) % images.length);
+    if (images.length > 0) {
+      setCurrentSlide((prev) => (prev - 1 + images.length) % images.length);
+    }
   }, [images.length]);
 
+  // Touch handlers for swipe
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    if (touchStartX.current === null || touchEndX.current === null) return;
+    
+    const diff = touchStartX.current - touchEndX.current;
+    const minSwipeDistance = 50;
+
+    if (Math.abs(diff) > minSwipeDistance) {
+      if (diff > 0) {
+        nextSlide();
+      } else {
+        prevSlide();
+      }
+    }
+
+    touchStartX.current = null;
+    touchEndX.current = null;
+  };
+
   useEffect(() => {
-    const timer = setInterval(nextSlide, 5000);
-    return () => clearInterval(timer);
-  }, [nextSlide]);
+    if (images.length > 1) {
+      const timer = setInterval(nextSlide, 5000);
+      return () => clearInterval(timer);
+    }
+  }, [nextSlide, images.length]);
 
   // Determine if link is external
   const isExternalLink = (url: string) => url.startsWith('http://') || url.startsWith('https://');
@@ -67,50 +99,71 @@ export function HeroCarousel({ content }: HeroCarouselProps) {
   };
 
   return (
-    <section className="relative min-h-screen flex items-center overflow-hidden">
+    <section 
+      className="relative min-h-screen flex items-center overflow-hidden"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
       {/* Background Images */}
-      {images.map((image, index) => (
-        <div
-          key={index}
-          className={cn(
-            "absolute inset-0 transition-opacity duration-1000",
-            index === currentSlide ? "opacity-100" : "opacity-0"
-          )}
-        >
-          <div 
-            className="absolute inset-0 bg-cover bg-center"
-            style={{ backgroundImage: `url(${image})` }}
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/90 via-primary/70 to-primary/50" />
-        </div>
-      ))}
+      {images.length > 0 ? (
+        images.map((image, index) => (
+          <div
+            key={index}
+            className={cn(
+              "absolute inset-0 transition-opacity duration-1000",
+              index === currentSlide ? "opacity-100" : "opacity-0"
+            )}
+          >
+            <div 
+              className="absolute inset-0 bg-cover bg-center"
+              style={{ backgroundImage: `url(${image})` }}
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-primary/90 via-primary/70 to-primary/50" />
+          </div>
+        ))
+      ) : (
+        <div className="absolute inset-0 gradient-hero" />
+      )}
 
       {/* Content */}
       <div className="container mx-auto px-4 pt-24 pb-16 relative z-10">
         <div className="max-w-4xl mx-auto text-center">
-          <div className="animate-fade-up">
-            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 text-white/90 text-sm font-medium mb-8 backdrop-blur-sm">
-              <Sparkles className="h-4 w-4" />
-              {badge}
-            </span>
-          </div>
+          {badge && (
+            <div className="animate-fade-up">
+              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 text-white/90 text-sm font-medium mb-8 backdrop-blur-sm">
+                <Sparkles className="h-4 w-4" />
+                {badge}
+              </span>
+            </div>
+          )}
 
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold text-white mb-6 animate-fade-up stagger-1">
-            {title}
-          </h1>
+          {title && (
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold text-white mb-6 animate-fade-up stagger-1">
+              {title}
+            </h1>
+          )}
 
-          <p className="text-lg sm:text-xl text-white/80 mb-10 max-w-2xl mx-auto animate-fade-up stagger-2">
-            {subtitle}
-          </p>
+          {subtitle && (
+            <p className="text-lg sm:text-xl text-white/80 mb-10 max-w-2xl mx-auto animate-fade-up stagger-2">
+              {subtitle}
+            </p>
+          )}
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-up stagger-3">
-            <Button asChild size="lg" className="bg-secondary hover:bg-secondary/90 text-secondary-foreground gap-2">
-              {renderLink(ctaPrimaryLink, <>{ctaPrimary}<ArrowRight className="h-4 w-4" /></>, '')}
-            </Button>
-            <Button asChild size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10 bg-transparent">
-              {renderLink(ctaSecondaryLink, ctaSecondary, '')}
-            </Button>
-          </div>
+          {(ctaPrimary || ctaSecondary) && (
+            <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-up stagger-3">
+              {ctaPrimary && (
+                <Button asChild size="lg" className="bg-secondary hover:bg-secondary/90 text-secondary-foreground gap-2">
+                  {renderLink(ctaPrimaryLink, <>{ctaPrimary}<ArrowRight className="h-4 w-4" /></>, '')}
+                </Button>
+              )}
+              {ctaSecondary && (
+                <Button asChild size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10 bg-transparent">
+                  {renderLink(ctaSecondaryLink, ctaSecondary, '')}
+                </Button>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Carousel Navigation */}

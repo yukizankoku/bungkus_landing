@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSiteSettings, useUpdateSiteSetting } from '@/hooks/useSiteSettings';
+import { usePublishedCustomPages } from '@/hooks/useCustomPages';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { Loader2, Save, MessageCircle, Search, Globe, Copy, Check, Megaphone, ShieldCheck } from 'lucide-react';
+import { Loader2, Save, MessageCircle, Search, Globe, Copy, Check, Megaphone, ShieldCheck, FileText } from 'lucide-react';
 import { 
   Select,
   SelectContent,
@@ -23,6 +24,7 @@ import { useToast } from '@/hooks/use-toast';
 export default function AdminSettings() {
   const { language } = useLanguage();
   const { data: settings, isLoading } = useSiteSettings();
+  const { data: customPages } = usePublishedCustomPages();
   const updateSetting = useUpdateSiteSetting();
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
@@ -161,8 +163,10 @@ export default function AdminSettings() {
                 </CardDescription>
               </div>
             </div>
-            <Button size="sm" onClick={handleSaveWhatsapp} disabled={updateSetting.isPending}>
-              {updateSetting.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            <Button size="sm" onClick={handleSaveWhatsapp} disabled={updateSetting.isPending} className="w-9 h-9 p-0">
+              <span className="w-4 h-4 inline-flex items-center justify-center">
+                {updateSetting.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              </span>
             </Button>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -254,8 +258,10 @@ export default function AdminSettings() {
                 </CardDescription>
               </div>
             </div>
-            <Button size="sm" onClick={handleSaveCtaDefaults} disabled={updateSetting.isPending}>
-              {updateSetting.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            <Button size="sm" onClick={handleSaveCtaDefaults} disabled={updateSetting.isPending} className="w-9 h-9 p-0">
+              <span className="w-4 h-4 inline-flex items-center justify-center">
+                {updateSetting.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              </span>
             </Button>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -322,8 +328,10 @@ export default function AdminSettings() {
                 </CardDescription>
               </div>
             </div>
-            <Button size="sm" onClick={handleSaveSeo} disabled={updateSetting.isPending}>
-              {updateSetting.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            <Button size="sm" onClick={handleSaveSeo} disabled={updateSetting.isPending} className="w-9 h-9 p-0">
+              <span className="w-4 h-4 inline-flex items-center justify-center">
+                {updateSetting.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              </span>
             </Button>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -435,46 +443,128 @@ export default function AdminSettings() {
               />
             </div>
 
+            {/* Sitemap Tools */}
+            <div className="p-4 rounded-lg border bg-muted/30 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label className="text-sm font-medium">{language === 'en' ? 'Dynamic Sitemap' : 'Sitemap Dinamis'}</Label>
+                  <p className="text-xs text-muted-foreground">
+                    {language === 'en' 
+                      ? 'Auto-generated from database with all pages, blogs, and custom pages' 
+                      : 'Dibuat otomatis dari database dengan semua halaman, blog, dan halaman kustom'}
+                  </p>
+                </div>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => window.open('https://ahhhiqcnnwpfbgdggvct.supabase.co/functions/v1/sitemap', '_blank')}
+                >
+                  {language === 'en' ? 'Preview Sitemap' : 'Lihat Sitemap'}
+                </Button>
+              </div>
+              <div className="flex items-center justify-between pt-2 border-t">
+                <div>
+                  <Label className="text-sm font-medium">Google Search Console</Label>
+                  <p className="text-xs text-muted-foreground">
+                    {language === 'en' 
+                      ? 'Submit your sitemap to Google for faster indexing' 
+                      : 'Kirim sitemap Anda ke Google untuk pengindeksan lebih cepat'}
+                  </p>
+                </div>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => window.open('https://search.google.com/search-console', '_blank')}
+                >
+                  {language === 'en' ? 'Open Console' : 'Buka Console'}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground pt-2 border-t">
+                <strong>{language === 'en' ? 'Sitemap URL:' : 'URL Sitemap:'}</strong>{' '}
+                <code className="bg-muted px-1 py-0.5 rounded text-[10px]">
+                  https://ahhhiqcnnwpfbgdggvct.supabase.co/functions/v1/sitemap
+                </code>
+              </p>
+            </div>
+
             {/* Page Indexing Controls */}
             <div className="space-y-4">
               <div>
                 <Label className="text-base font-medium">{language === 'en' ? 'Page Indexing' : 'Pengindeksan Halaman'}</Label>
                 <p className="text-sm text-muted-foreground">
                   {language === 'en' 
-                    ? 'Enable or disable search engine indexing for each page' 
-                    : 'Aktifkan atau nonaktifkan pengindeksan mesin pencari untuk setiap halaman'}
+                    ? 'Enable or disable search engine indexing for each page. Admin pages are automatically excluded.' 
+                    : 'Aktifkan atau nonaktifkan pengindeksan mesin pencari untuk setiap halaman. Halaman admin otomatis dikecualikan.'}
                 </p>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {[
-                  { key: 'home', label: 'Home / Beranda' },
-                  { key: 'about', label: 'About / Tentang' },
-                  { key: 'products', label: 'Products / Produk' },
-                  { key: 'product-catalog', label: 'Product Catalog / Katalog Produk' },
-                  { key: 'corporate-solutions', label: 'Corporate Solutions / Solusi Korporat' },
-                  { key: 'umkm-solutions', label: 'UMKM Solutions / Solusi UMKM' },
-                  { key: 'case-studies', label: 'Case Studies / Studi Kasus' },
-                  { key: 'blog', label: 'Blog' },
-                  { key: 'contact', label: 'Contact / Kontak' },
-                  { key: 'terms-conditions', label: 'Terms & Conditions / Syarat & Ketentuan' },
-                  { key: 'privacy-policy', label: 'Privacy Policy / Kebijakan Privasi' },
-                ].map((page) => (
-                  <div key={page.key} className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
-                    <span className="text-sm font-medium">{page.label}</span>
-                    <Switch 
-                      checked={seo.page_indexing[page.key] !== false}
-                      onCheckedChange={(checked) => setSeo(prev => ({ 
-                        ...prev, 
-                        page_indexing: { ...prev.page_indexing, [page.key]: checked }
-                      }))}
-                    />
-                  </div>
-                ))}
+              
+              {/* Static Pages */}
+              <div className="space-y-2">
+                <Label className="text-sm text-muted-foreground">{language === 'en' ? 'Static Pages' : 'Halaman Statis'}</Label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {[
+                    { key: 'home', label: 'Home / Beranda' },
+                    { key: 'about', label: 'About / Tentang' },
+                    { key: 'products', label: 'Products / Produk' },
+                    { key: 'product-catalog', label: 'Product Catalog / Katalog Produk' },
+                    { key: 'corporate-solutions', label: 'Corporate Solutions / Solusi Korporat' },
+                    { key: 'umkm-solutions', label: 'UMKM Solutions / Solusi UMKM' },
+                    { key: 'case-studies', label: 'Case Studies / Studi Kasus' },
+                    { key: 'blog', label: 'Blog' },
+                    { key: 'contact', label: 'Contact / Kontak' },
+                    { key: 'terms-conditions', label: 'Terms & Conditions / Syarat & Ketentuan' },
+                    { key: 'privacy-policy', label: 'Privacy Policy / Kebijakan Privasi' },
+                  ].map((page) => (
+                    <div key={page.key} className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
+                      <span className="text-sm font-medium">{page.label}</span>
+                      <Switch 
+                        checked={seo.page_indexing[page.key] !== false}
+                        onCheckedChange={(checked) => setSeo(prev => ({ 
+                          ...prev, 
+                          page_indexing: { ...prev.page_indexing, [page.key]: checked }
+                        }))}
+                      />
+                    </div>
+                  ))}
+                </div>
               </div>
+
+              {/* Custom Pages */}
+              {customPages && customPages.length > 0 && (
+                <div className="space-y-2">
+                  <Label className="text-sm text-muted-foreground flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
+                    {language === 'en' ? 'Custom Pages' : 'Halaman Kustom'}
+                  </Label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {customPages.map((page) => {
+                      const pageKey = `custom-${page.slug}`;
+                      return (
+                        <div key={page.id} className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
+                          <div className="flex flex-col">
+                            <span className="text-sm font-medium">{language === 'id' ? page.title_id : page.title_en}</span>
+                            <span className="text-xs text-muted-foreground">/p/{page.slug}</span>
+                          </div>
+                          <Switch 
+                            checked={seo.page_indexing[pageKey] !== false}
+                            onCheckedChange={(checked) => setSeo(prev => ({ 
+                              ...prev, 
+                              page_indexing: { ...prev.page_indexing, [pageKey]: checked }
+                            }))}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               <p className="text-xs text-muted-foreground">
                 {language === 'en' 
-                  ? 'Pages with indexing disabled will have "noindex, nofollow" meta tag.' 
-                  : 'Halaman dengan pengindeksan dinonaktifkan akan memiliki meta tag "noindex, nofollow".'}
+                  ? 'Pages with indexing disabled will have "noindex, nofollow" meta tag and be excluded from sitemap.' 
+                  : 'Halaman dengan pengindeksan dinonaktifkan akan memiliki meta tag "noindex, nofollow" dan dikecualikan dari sitemap.'}
               </p>
             </div>
 
@@ -521,8 +611,10 @@ export default function AdminSettings() {
                 </CardDescription>
               </div>
             </div>
-            <Button size="sm" onClick={handleSaveSeo} disabled={updateSetting.isPending}>
-              {updateSetting.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            <Button size="sm" onClick={handleSaveSeo} disabled={updateSetting.isPending} className="w-9 h-9 p-0">
+              <span className="w-4 h-4 inline-flex items-center justify-center">
+                {updateSetting.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              </span>
             </Button>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -590,8 +682,10 @@ export default function AdminSettings() {
                 </CardDescription>
               </div>
             </div>
-            <Button size="sm" onClick={handleSaveSeo} disabled={updateSetting.isPending}>
-              {updateSetting.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            <Button size="sm" onClick={handleSaveSeo} disabled={updateSetting.isPending} className="w-9 h-9 p-0">
+              <span className="w-4 h-4 inline-flex items-center justify-center">
+                {updateSetting.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              </span>
             </Button>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -634,8 +728,10 @@ export default function AdminSettings() {
                 </CardDescription>
               </div>
             </div>
-            <Button size="sm" onClick={handleSaveSeo} disabled={updateSetting.isPending}>
-              {updateSetting.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            <Button size="sm" onClick={handleSaveSeo} disabled={updateSetting.isPending} className="w-9 h-9 p-0">
+              <span className="w-4 h-4 inline-flex items-center justify-center">
+                {updateSetting.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              </span>
             </Button>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -786,8 +882,10 @@ export default function AdminSettings() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Favicon</CardTitle>
-            <Button size="sm" onClick={handleSaveFavicon} disabled={updateSetting.isPending}>
-              {updateSetting.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            <Button size="sm" onClick={handleSaveFavicon} disabled={updateSetting.isPending} className="w-9 h-9 p-0">
+              <span className="w-4 h-4 inline-flex items-center justify-center">
+                {updateSetting.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              </span>
             </Button>
           </CardHeader>
           <CardContent>
@@ -805,8 +903,10 @@ export default function AdminSettings() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Logo</CardTitle>
-            <Button size="sm" onClick={handleSaveLogo} disabled={updateSetting.isPending}>
-              {updateSetting.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            <Button size="sm" onClick={handleSaveLogo} disabled={updateSetting.isPending} className="w-9 h-9 p-0">
+              <span className="w-4 h-4 inline-flex items-center justify-center">
+                {updateSetting.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              </span>
             </Button>
           </CardHeader>
           <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -832,8 +932,10 @@ export default function AdminSettings() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>{language === 'en' ? 'Contact Information' : 'Informasi Kontak'}</CardTitle>
-            <Button size="sm" onClick={handleSaveContact} disabled={updateSetting.isPending}>
-              {updateSetting.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            <Button size="sm" onClick={handleSaveContact} disabled={updateSetting.isPending} className="w-9 h-9 p-0">
+              <span className="w-4 h-4 inline-flex items-center justify-center">
+                {updateSetting.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              </span>
             </Button>
           </CardHeader>
           <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -859,8 +961,10 @@ export default function AdminSettings() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Social Media</CardTitle>
-            <Button size="sm" onClick={handleSaveSocial} disabled={updateSetting.isPending}>
-              {updateSetting.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            <Button size="sm" onClick={handleSaveSocial} disabled={updateSetting.isPending} className="w-9 h-9 p-0">
+              <span className="w-4 h-4 inline-flex items-center justify-center">
+                {updateSetting.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              </span>
             </Button>
           </CardHeader>
           <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">

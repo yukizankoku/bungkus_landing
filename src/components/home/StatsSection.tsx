@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { useLanguage } from '@/contexts/LanguageContext';
 
 interface StatItem {
   value: number;
@@ -10,13 +9,6 @@ interface StatItem {
 interface StatsSectionProps {
   items?: StatItem[];
 }
-
-const defaultStats = [
-  { value: 500, suffix: '+', labelId: 'Klien Terlayani', labelEn: 'Clients Served' },
-  { value: 10, suffix: 'M+', labelId: 'Produk Diproduksi', labelEn: 'Products Produced' },
-  { value: 15, suffix: '+', labelId: 'Tahun Pengalaman', labelEn: 'Years Experience' },
-  { value: 50, suffix: '+', labelId: 'Karyawan', labelEn: 'Employees' },
-];
 
 function AnimatedNumber({ value, suffix }: { value: number; suffix: string }) {
   const [count, setCount] = useState(0);
@@ -49,19 +41,16 @@ function AnimatedNumber({ value, suffix }: { value: number; suffix: string }) {
 }
 
 export function StatsSection({ items }: StatsSectionProps) {
-  const { t, language } = useLanguage();
-
-  const displayItems = items?.length ? items : defaultStats.map(s => ({
-    value: s.value,
-    suffix: s.suffix,
-    label: language === 'id' ? s.labelId : s.labelEn,
-  }));
+  // Don't render if no items provided (CMS not configured)
+  if (!items || items.length === 0) {
+    return null;
+  }
 
   return (
     <section className="py-16 gradient-primary">
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
-          {displayItems.map((stat, index) => (
+          {items.map((stat, index) => (
             <div key={index} className="text-center">
               <div className="text-4xl sm:text-5xl font-display font-bold text-white mb-2">
                 <AnimatedNumber value={stat.value} suffix={stat.suffix} />

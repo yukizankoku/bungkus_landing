@@ -16,14 +16,20 @@ export interface NavigationMenu {
   children?: NavigationMenu[];
 }
 
-export function useNavigationMenus() {
+export function useNavigationMenus(includeHidden = false) {
   return useQuery({
-    queryKey: ['navigation-menus'],
+    queryKey: ['navigation-menus', includeHidden],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('navigation_menus')
         .select('*')
         .order('sort_order', { ascending: true });
+      
+      if (!includeHidden) {
+        query = query.eq('is_visible', true);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       return data as NavigationMenu[];
@@ -31,8 +37,13 @@ export function useNavigationMenus() {
   });
 }
 
-export function useNavigationMenusHierarchy() {
-  const { data: menus, ...rest } = useNavigationMenus();
+// For admin pages - includes hidden items
+export function useAllNavigationMenus() {
+  return useNavigationMenus(true);
+}
+
+export function useNavigationMenusHierarchy(includeHidden = false) {
+  const { data: menus, ...rest } = useNavigationMenus(includeHidden);
 
   const buildHierarchy = (items: NavigationMenu[]): NavigationMenu[] => {
     const itemMap = new Map<string, NavigationMenu>();

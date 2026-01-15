@@ -22,56 +22,32 @@ interface ProductsSectionProps {
 export function ProductsSection({ title, subtitle, items }: ProductsSectionProps) {
   const { t } = useLanguage();
 
-  const defaultItems: Product[] = [
-    { 
-      image: 'https://images.unsplash.com/photo-1605000797499-95a51c5269ae?w=600', 
-      name: 'Paper Bag', 
-      description: t('Tas kertas ramah lingkungan', 'Eco-friendly paper bags'),
-      category: 'Paper Bag',
-      tags: ['Eco-Friendly']
-    },
-    { 
-      image: 'https://images.unsplash.com/photo-1607349913338-fca6f7fc42d0?w=600', 
-      name: 'Food Container', 
-      description: t('Wadah makanan food-grade', 'Food-grade containers'),
-      category: 'Container',
-      tags: ['Food Grade']
-    },
-    { 
-      image: 'https://images.unsplash.com/photo-1617952385804-7b326fa42678?w=600', 
-      name: 'Coffee Cup', 
-      description: t('Gelas minuman', 'Beverage cups'),
-      category: 'Paper Cup',
-      tags: ['Hot & Cold']
-    },
-    { 
-      image: 'https://images.unsplash.com/photo-1571211905393-6de67ff8fb61?w=600', 
-      name: 'Custom Packaging', 
-      description: t('Kemasan custom', 'Custom packaging'),
-      category: 'Custom',
-      tags: ['Branded']
-    },
-  ];
-
-  const displayItems = items?.length ? items : defaultItems;
-  const displayTitle = title || t('Produk Kami', 'Our Products');
-  const displaySubtitle = subtitle || t('Temukan berbagai solusi kemasan berkualitas kami.', 'Discover our wide range of quality packaging solutions.');
+  // Don't render if no items provided (CMS not configured)
+  if (!items || items.length === 0) {
+    return null;
+  }
 
   return (
     <section className="py-24 bg-muted/30">
       <div className="container mx-auto px-4">
-        <div className="text-center max-w-3xl mx-auto mb-16">
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold text-foreground mb-4">
-            {displayTitle}
-          </h2>
-          <p className="text-muted-foreground text-lg">
-            {displaySubtitle}
-          </p>
-        </div>
+        {(title || subtitle) && (
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            {title && (
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold text-foreground mb-4">
+                {title}
+              </h2>
+            )}
+            {subtitle && (
+              <p className="text-muted-foreground text-lg">
+                {subtitle}
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Modern 2026 Product Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-          {displayItems.map((product, index) => (
+          {items.map((product, index) => (
             <div
               key={index}
               className="group relative"
@@ -81,12 +57,14 @@ export function ProductsSection({ title, subtitle, items }: ProductsSectionProps
               <div className="relative bg-card rounded-3xl overflow-hidden border border-border/50 shadow-sm hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 hover:-translate-y-3">
                 {/* Image Container */}
                 <div className="aspect-[4/3] overflow-hidden relative">
-                  <img
-                    src={product.image || 'https://images.unsplash.com/photo-1605000797499-95a51c5269ae?w=600'}
-                    alt={product.name}
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                    loading="lazy"
-                  />
+                  {product.image && (
+                    <img
+                      src={product.image}
+                      alt={product.name}
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                      loading="lazy"
+                    />
+                  )}
                   {/* Gradient Overlay */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                   

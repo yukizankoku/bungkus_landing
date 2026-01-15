@@ -176,11 +176,19 @@
     @apply transition-all duration-200 ease-out rounded-lg;
   }
 
-  .nav-item-3d:hover {
-    @apply -translate-y-0.5;
-    background: hsl(var(--secondary) / 0.1);
-    box-shadow: 0 4px 12px hsl(var(--primary) / 0.15), 0 2px 4px hsl(var(--primary) / 0.1);
-  }
+.nav-item-3d:hover {
+  @apply -translate-y-0.5;
+  background: hsl(var(--secondary) / 0.15);
+  box-shadow: 0 4px 12px hsl(var(--primary) / 0.2), 0 2px 4px hsl(var(--primary) / 0.15);
+}
+
+.nav-item-3d.active {
+  @apply -translate-y-0.5;
+  background: hsl(var(--secondary) / 0.2);
+  box-shadow: 0 4px 12px hsl(var(--primary) / 0.2), 0 2px 4px hsl(var(--primary) / 0.1);
+  color: hsl(var(--secondary));
+  font-weight: 600;
+}
 
   .animate-fade-up {
     animation: fadeUp 0.6s ease-out forwards;

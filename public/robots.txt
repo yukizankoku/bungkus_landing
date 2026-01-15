@@ -28,5 +28,5 @@ Disallow: /admin
 Disallow: /admin/
 Disallow: /auth
 
-# Sitemap
+# Dynamic Sitemap - Generated from database
 Sitemap: https://ahhhiqcnnwpfbgdggvct.supabase.co/functions/v1/sitemap

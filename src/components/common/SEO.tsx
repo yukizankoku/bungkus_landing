@@ -46,10 +46,13 @@ export function SEO({
   const canonicalUrl = url || `${baseUrl}${currentPath}`;
   const ogImage = image || seo?.default_og_image || `${baseUrl}/og-image.png`;
   
+  // Admin pages should never be indexed
+  const isAdminPage = currentPath.startsWith('/admin') || currentPath.startsWith('/auth');
+  
   // Determine if this page should be indexed
   let robotsContent = seo?.meta_robots || 'index, follow';
   
-  if (noIndex) {
+  if (noIndex || isAdminPage) {
     robotsContent = 'noindex, nofollow';
   } else if (pageKey && seo?.page_indexing) {
     const isIndexed = seo.page_indexing[pageKey];
@@ -65,13 +68,17 @@ export function SEO({
       {keywords && <meta name="keywords" content={keywords} />}
       <meta name="robots" content={robotsContent} />
       
-      {/* Canonical URL */}
-      <link rel="canonical" href={canonicalUrl} />
+      {/* Canonical URL - skip for admin pages */}
+      {!isAdminPage && <link rel="canonical" href={canonicalUrl} />}
       
-      {/* Hreflang for multilingual SEO */}
-      <link rel="alternate" hrefLang="id" href={canonicalUrl} />
-      <link rel="alternate" hrefLang="en" href={canonicalUrl} />
-      <link rel="alternate" hrefLang="x-default" href={canonicalUrl} />
+      {/* Hreflang for multilingual SEO - skip for admin pages */}
+      {!isAdminPage && (
+        <>
+          <link rel="alternate" hrefLang="id" href={canonicalUrl} />
+          <link rel="alternate" hrefLang="en" href={canonicalUrl} />
+          <link rel="alternate" hrefLang="x-default" href={canonicalUrl} />
+        </>
+      )}
       
       {/* Open Graph */}
       <meta property="og:type" content={type} />

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { usePageContent, useUpdatePageContent } from '@/hooks/usePageContent';
@@ -8,12 +8,32 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Loader2, Save, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, Loader2, Save, Plus, Trash2, Eye, EyeOff, GripVertical } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import AdminLayout from '@/components/admin/AdminLayout';
 import ImageUploader from '@/components/admin/ImageUploader';
 import LivePreview from '@/components/admin/LivePreview';
 import IconSelector from '@/components/admin/IconSelector';
+import SEOAudit from '@/components/admin/SEOAudit';
+import RichTextEditor from '@/components/admin/RichTextEditor';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { cn } from '@/lib/utils';
 
 interface ContentItem {
   icon?: string;
@@ -30,6 +50,49 @@ interface ContentItem {
   tags?: string[];
 }
 
+// Sortable Item Component
+interface SortableItemProps {
+  id: string;
+  children: React.ReactNode;
+}
+
+function SortableItem({ id, children }: SortableItemProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn("relative", isDragging && "opacity-50 z-50")}
+    >
+      <div className="absolute left-2 top-4 z-10">
+        <button
+          className="cursor-grab active:cursor-grabbing touch-none p-1 rounded hover:bg-muted"
+          {...attributes}
+          {...listeners}
+        >
+          <GripVertical className="h-4 w-4 text-muted-foreground" />
+        </button>
+      </div>
+      <div className="pl-8">
+        {children}
+      </div>
+    </div>
+  );
+}
+
 export default function AdminPageEditor() {
   const { pageKey } = useParams<{ pageKey: string }>();
   const navigate = useNavigate();
@@ -39,6 +102,18 @@ export default function AdminPageEditor() {
 
   const [contentEn, setContentEn] = useState<Record<string, any>>({});
   const [contentId, setContentId] = useState<Record<string, any>>({});
+  const [showPreview, setShowPreview] = useState(true);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   useEffect(() => {
     if (page) {
@@ -50,6 +125,28 @@ export default function AdminPageEditor() {
   const handleSave = () => {
     if (!pageKey) return;
     updatePage.mutate({ pageKey, contentEn, contentId });
+  };
+
+  // Reorder handler for drag-and-drop
+  const handleDragEnd = (section: string) => (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const reorderInBoth = (arr: any[]) => {
+      const oldIndex = arr.findIndex((_, i) => `${section}-${i}` === active.id);
+      const newIndex = arr.findIndex((_, i) => `${section}-${i}` === over.id);
+      if (oldIndex === -1 || newIndex === -1) return arr;
+      return arrayMove(arr, oldIndex, newIndex);
+    };
+
+    setContentEn((prev: Record<string, any>) => ({
+      ...prev,
+      [section]: reorderInBoth(prev[section] || [])
+    }));
+    setContentId((prev: Record<string, any>) => ({
+      ...prev,
+      [section]: reorderInBoth(prev[section] || [])
+    }));
   };
 
   const updateField = (lang: 'en' | 'id', section: string, field: string, value: any) => {
@@ -95,7 +192,11 @@ export default function AdminPageEditor() {
           <Label>Hero Image</Label>
           <ImageUploader
             value={content.hero?.image || ''}
-            onChange={(url) => updateField(lang, 'hero', 'image', url)}
+            onChange={(url) => {
+              // Sync image to both languages
+              updateField('en', 'hero', 'image', url);
+              updateField('id', 'hero', 'image', url);
+            }}
             folder="heroes"
           />
         </div>
@@ -329,17 +430,31 @@ export default function AdminPageEditor() {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => addArrayItem(lang, 'products', { image: '', name: '', description: '', category: '', tags: [] })}
+          onClick={() => {
+            // Add to both languages to keep sync
+            const newProduct = { image: '', name: '', description: '', category: '', tags: [] };
+            addArrayItem('en', 'products', newProduct);
+            addArrayItem('id', 'products', newProduct);
+          }}
         >
           <Plus className="h-4 w-4 mr-1" /> Add Product
         </Button>
       </CardHeader>
       <CardContent className="space-y-4">
+        <p className="text-xs text-muted-foreground">
+          {language === 'en' 
+            ? 'Images sync across languages. Text is language-specific.' 
+            : 'Gambar disinkronkan antar bahasa. Teks khusus per bahasa.'}
+        </p>
         {(content.products || []).map((item: any, index: number) => (
           <div key={index} className="p-4 border rounded-lg space-y-3">
             <div className="flex justify-between items-center">
               <span className="font-medium">Product {index + 1}</span>
-              <Button variant="ghost" size="sm" onClick={() => removeArrayItem(lang, 'products', index)}>
+              <Button variant="ghost" size="sm" onClick={() => {
+                // Remove from both languages
+                removeArrayItem('en', 'products', index);
+                removeArrayItem('id', 'products', index);
+              }}>
                 <Trash2 className="h-4 w-4 text-destructive" />
               </Button>
             </div>
@@ -347,7 +462,11 @@ export default function AdminPageEditor() {
               <Label>Image</Label>
               <ImageUploader
                 value={item.image || ''}
-                onChange={(url) => updateArrayItem(lang, 'products', index, 'image', url)}
+                onChange={(url) => {
+                  // Sync image to both languages
+                  updateArrayItem('en', 'products', index, 'image', url);
+                  updateArrayItem('id', 'products', index, 'image', url);
+                }}
                 folder="products"
               />
             </div>
@@ -564,6 +683,16 @@ export default function AdminPageEditor() {
         <CardTitle>Success Stories Section</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        <div className="flex items-center justify-between">
+          <Label>Show Section</Label>
+          <Switch
+            checked={content.successSection?.isVisible !== false}
+            onCheckedChange={(checked) => setContent((prev: Record<string, any>) => ({
+              ...prev,
+              successSection: { ...prev.successSection, isVisible: checked }
+            }))}
+          />
+        </div>
         <div>
           <Label>Section Title</Label>
           <Input
@@ -585,15 +714,29 @@ export default function AdminPageEditor() {
             rows={2}
           />
         </div>
-        <div>
-          <Label>Button Text</Label>
-          <Input
-            value={content.successSection?.buttonText || ''}
-            onChange={(e) => setContent((prev: Record<string, any>) => ({
-              ...prev,
-              successSection: { ...prev.successSection, buttonText: e.target.value }
-            }))}
-          />
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label>Button Text</Label>
+            <Input
+              value={content.successSection?.buttonText || ''}
+              onChange={(e) => setContent((prev: Record<string, any>) => ({
+                ...prev,
+                successSection: { ...prev.successSection, buttonText: e.target.value }
+              }))}
+              placeholder={lang === 'id' ? 'Lihat Case Studies' : 'View Case Studies'}
+            />
+          </div>
+          <div>
+            <Label>Button Link</Label>
+            <Input
+              value={content.successSection?.buttonLink || ''}
+              onChange={(e) => setContent((prev: Record<string, any>) => ({
+                ...prev,
+                successSection: { ...prev.successSection, buttonLink: e.target.value }
+              }))}
+              placeholder="/case-studies"
+            />
+          </div>
         </div>
       </CardContent>
     </Card>
@@ -689,54 +832,92 @@ export default function AdminPageEditor() {
     </Card>
   );
 
-  const renderTeamSection = (lang: 'en' | 'id', content: Record<string, any>) => (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Team Members</CardTitle>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => addArrayItem(lang, 'team', { name: '', role: '', image: '' })}
-        >
-          <Plus className="h-4 w-4 mr-1" /> Add
-        </Button>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {(content.team || []).map((item: ContentItem, index: number) => (
-          <div key={index} className="p-4 border rounded-lg space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="font-medium">Member {index + 1}</span>
-              <Button variant="ghost" size="sm" onClick={() => removeArrayItem(lang, 'team', index)}>
-                <Trash2 className="h-4 w-4 text-destructive" />
-              </Button>
-            </div>
-            <div>
-              <Label>Photo</Label>
-              <ImageUploader
-                value={item.image || ''}
-                onChange={(url) => updateArrayItem(lang, 'team', index, 'image', url)}
-                folder="team"
-              />
-            </div>
-            <div>
-              <Label>Name</Label>
-              <Input
-                value={item.name || ''}
-                onChange={(e) => updateArrayItem(lang, 'team', index, 'name', e.target.value)}
-              />
-            </div>
-            <div>
-              <Label>Role</Label>
-              <Input
-                value={item.role || ''}
-                onChange={(e) => updateArrayItem(lang, 'team', index, 'role', e.target.value)}
-              />
-            </div>
-          </div>
-        ))}
-      </CardContent>
-    </Card>
-  );
+  const renderTeamSection = (lang: 'en' | 'id', content: Record<string, any>) => {
+    const teamItems = content.team || [];
+    const teamIds = teamItems.map((_: any, i: number) => `team-${i}`);
+    
+    return (
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>Team Members</CardTitle>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              // Add to both languages to keep sync
+              const newMember = { name: '', role: '', image: '' };
+              addArrayItem('en', 'team', newMember);
+              addArrayItem('id', 'team', newMember);
+            }}
+          >
+            <Plus className="h-4 w-4 mr-1" /> Add
+          </Button>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-xs text-muted-foreground">
+            {language === 'en' 
+              ? 'Drag items to reorder. Photos sync across languages.' 
+              : 'Seret untuk mengatur urutan. Foto disinkronkan antar bahasa.'}
+          </p>
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd('team')}>
+            <SortableContext items={teamIds} strategy={verticalListSortingStrategy}>
+              {teamItems.map((item: ContentItem, index: number) => (
+                <SortableItem key={`team-${index}`} id={`team-${index}`}>
+                  <div className="p-4 border rounded-lg space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="font-medium">Member {index + 1}</span>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => {
+                          // Remove from both languages
+                          removeArrayItem('en', 'team', index);
+                          removeArrayItem('id', 'team', index);
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
+                    <div>
+                      <Label>Photo</Label>
+                      <ImageUploader
+                        value={item.image || ''}
+                        onChange={(url) => {
+                          // Sync image to both languages
+                          updateArrayItem('en', 'team', index, 'image', url);
+                          updateArrayItem('id', 'team', index, 'image', url);
+                        }}
+                        folder="team"
+                      />
+                    </div>
+                    <div>
+                      <Label>Name</Label>
+                      <Input
+                        value={item.name || ''}
+                        onChange={(e) => updateArrayItem(lang, 'team', index, 'name', e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label>Role</Label>
+                      <Input
+                        value={item.role || ''}
+                        onChange={(e) => updateArrayItem(lang, 'team', index, 'role', e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </SortableItem>
+              ))}
+            </SortableContext>
+          </DndContext>
+          {teamItems.length === 0 && (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              {language === 'en' ? 'No team members yet. Click "Add" to add your first team member.' : 'Belum ada anggota tim. Klik "Tambah" untuk menambahkan.'}
+            </p>
+          )}
+        </CardContent>
+      </Card>
+    );
+  };
 
   const renderCategoriesSection = (lang: 'en' | 'id', content: Record<string, any>) => (
     <Card>
@@ -934,8 +1115,115 @@ export default function AdminPageEditor() {
     </Card>
   );
 
+  const renderCTASection = (lang: 'en' | 'id', content: Record<string, any>, setContent: React.Dispatch<React.SetStateAction<Record<string, any>>>) => (
+    <Card>
+      <CardHeader>
+        <CardTitle>Call to Action Section</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div>
+          <Label>Title</Label>
+          <Input
+            value={content.cta?.title || ''}
+            onChange={(e) => setContent((prev: Record<string, any>) => ({
+              ...prev,
+              cta: { ...prev.cta, title: e.target.value }
+            }))}
+            placeholder={lang === 'id' ? 'Siap Memulai Kemitraan dengan Kami?' : 'Ready to Start a Partnership with Us?'}
+          />
+        </div>
+        <div>
+          <Label>Subtitle</Label>
+          <Textarea
+            value={content.cta?.subtitle || ''}
+            onChange={(e) => setContent((prev: Record<string, any>) => ({
+              ...prev,
+              cta: { ...prev.cta, subtitle: e.target.value }
+            }))}
+            placeholder={lang === 'id' ? 'Hubungi kami sekarang untuk konsultasi gratis.' : 'Contact us now for free consultation.'}
+            rows={2}
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label>Primary Button Text</Label>
+            <Input
+              value={content.cta?.primary_button || ''}
+              onChange={(e) => setContent((prev: Record<string, any>) => ({
+                ...prev,
+                cta: { ...prev.cta, primary_button: e.target.value }
+              }))}
+              placeholder={lang === 'id' ? 'Hubungi Kami' : 'Contact Us'}
+            />
+          </div>
+          <div>
+            <Label>Primary Button Link</Label>
+            <Input
+              value={content.cta?.primary_button_link || ''}
+              onChange={(e) => setContent((prev: Record<string, any>) => ({
+                ...prev,
+                cta: { ...prev.cta, primary_button_link: e.target.value }
+              }))}
+              placeholder="/hubungi-kami"
+            />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label>Secondary Button Text</Label>
+            <Input
+              value={content.cta?.secondary_button || ''}
+              onChange={(e) => setContent((prev: Record<string, any>) => ({
+                ...prev,
+                cta: { ...prev.cta, secondary_button: e.target.value }
+              }))}
+              placeholder={lang === 'id' ? 'Lihat Produk' : 'View Products'}
+            />
+          </div>
+          <div>
+            <Label>Secondary Button Link</Label>
+            <Input
+              value={content.cta?.secondary_button_link || ''}
+              onChange={(e) => setContent((prev: Record<string, any>) => ({
+                ...prev,
+                cta: { ...prev.cta, secondary_button_link: e.target.value }
+              }))}
+              placeholder="/produk"
+            />
+          </div>
+        </div>
+        <p className="text-sm text-muted-foreground">
+          Leave fields empty to use the global CTA defaults from Site Settings.
+        </p>
+      </CardContent>
+    </Card>
+  );
+
+  const renderLegalPageSection = (lang: 'en' | 'id', content: Record<string, any>, setContent: React.Dispatch<React.SetStateAction<Record<string, any>>>) => (
+    <Card>
+      <CardHeader>
+        <CardTitle>{lang === 'en' ? 'Page Content' : 'Konten Halaman'}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <RichTextEditor
+          value={content.content || ''}
+          onChange={(value) => setContent((prev: Record<string, any>) => ({ ...prev, content: value }))}
+          placeholder={lang === 'en' ? 'Enter page content...' : 'Masukkan konten halaman...'}
+        />
+      </CardContent>
+    </Card>
+  );
+
   const renderPageContent = (lang: 'en' | 'id', content: Record<string, any>, setContent: React.Dispatch<React.SetStateAction<Record<string, any>>>) => {
     const sections = [];
+    
+    // Legal pages only need hero, content, and SEO
+    if (pageKey === 'privacy-policy' || pageKey === 'terms-conditions') {
+      sections.push(renderHeroSection(lang, content));
+      sections.push(renderLegalPageSection(lang, content, setContent));
+      sections.push(renderSEOSection(lang, content, setContent));
+      return sections;
+    }
     
     // Always render hero and SEO
     sections.push(renderHeroSection(lang, content));
@@ -949,10 +1237,12 @@ export default function AdminPageEditor() {
         break;
       case 'about':
         sections.push(renderAboutSection(lang, content));
+        sections.push(renderCTASection(lang, content, setContent));
         break;
       case 'products':
         sections.push(renderCategoriesSection(lang, content));
         sections.push(renderMaterialsSection(lang, content, setContent));
+        sections.push(renderCTASection(lang, content, setContent));
         break;
       case 'product-catalog':
         sections.push(renderProductCatalogSection(lang, content));
@@ -961,17 +1251,20 @@ export default function AdminPageEditor() {
         sections.push(renderBenefitsSectionHeader(lang, content, setContent));
         sections.push(renderBenefitsSection(lang, content));
         sections.push(renderProcessSection(lang, content, setContent));
+        sections.push(renderCTASection(lang, content, setContent));
         break;
       case 'umkm-solutions':
         sections.push(renderBenefitsSectionHeader(lang, content, setContent));
         sections.push(renderBenefitsSection(lang, content));
         sections.push(renderSuccessSection(lang, content, setContent));
+        sections.push(renderCTASection(lang, content, setContent));
         break;
       case 'case-studies':
         sections.push(renderCaseStudiesSection(lang, content));
+        sections.push(renderCTASection(lang, content, setContent));
         break;
       case 'blog':
-        // Blog page only needs hero and SEO which are already added
+        sections.push(renderCTASection(lang, content, setContent));
         break;
     }
     
@@ -996,7 +1289,9 @@ export default function AdminPageEditor() {
     'corporate-solutions': 'Solusi Korporat / Corporate Solutions',
     'umkm-solutions': 'Solusi UMKM / UMKM Solutions',
     'case-studies': 'Studi Kasus / Case Studies',
-    'blog': 'Blog'
+    'blog': 'Blog',
+    'privacy-policy': 'Kebijakan Privasi / Privacy Policy',
+    'terms-conditions': 'Syarat & Ketentuan / Terms & Conditions'
   };
 
   const pageRoutes: Record<string, string> = {
@@ -1007,7 +1302,9 @@ export default function AdminPageEditor() {
     'corporate-solutions': '/solusi-korporat',
     'umkm-solutions': '/solusi-umkm',
     'case-studies': '/studi-kasus',
-    'blog': '/blog'
+    'blog': '/blog',
+    'privacy-policy': '/privacy',
+    'terms-conditions': '/terms'
   };
 
   return (
@@ -1020,14 +1317,29 @@ export default function AdminPageEditor() {
             </Button>
             <h1 className="text-2xl font-bold">{pageLabels[pageKey || ''] || pageKey}</h1>
           </div>
-          <Button onClick={handleSave} disabled={updatePage.isPending}>
-            {updatePage.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
-            {language === 'en' ? 'Save Changes' : 'Simpan'}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowPreview(!showPreview)}
+              className="hidden xl:flex"
+            >
+              {showPreview ? <EyeOff className="h-4 w-4 mr-2" /> : <Eye className="h-4 w-4 mr-2" />}
+              {showPreview 
+                ? (language === 'en' ? 'Hide Preview' : 'Sembunyikan Preview')
+                : (language === 'en' ? 'Show Preview' : 'Tampilkan Preview')}
+            </Button>
+            <Button onClick={handleSave} disabled={updatePage.isPending} className="min-w-[120px]">
+              <span className="w-4 h-4 mr-2 inline-flex items-center justify-center">
+                {updatePage.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              </span>
+              {language === 'en' ? 'Save Changes' : 'Simpan'}
+            </Button>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-          <div>
+        <div className={`grid gap-6 ${showPreview ? 'grid-cols-1 xl:grid-cols-2' : 'grid-cols-1 lg:grid-cols-3'}`}>
+          <div className={showPreview ? '' : 'lg:col-span-2'}>
             <Tabs defaultValue="en">
               <TabsList>
                 <TabsTrigger value="en">English</TabsTrigger>
@@ -1042,14 +1354,76 @@ export default function AdminPageEditor() {
                 {renderPageContent('id', contentId, setContentId)}
               </TabsContent>
             </Tabs>
+
+            {/* SEO Audit below form when preview is ON */}
+            {showPreview && (
+              <div className="mt-6">
+                <Tabs defaultValue="id">
+                  <TabsList className="w-full">
+                    <TabsTrigger value="id" className="flex-1">SEO (ID)</TabsTrigger>
+                    <TabsTrigger value="en" className="flex-1">SEO (EN)</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="id" className="mt-4">
+                    <SEOAudit
+                      title={contentId?.hero?.title || contentId?.title || ''}
+                      metaTitle={contentId?.meta_title || contentId?.hero?.title || ''}
+                      metaDescription={contentId?.meta_description || contentId?.hero?.subtitle || ''}
+                      content={JSON.stringify(contentId)}
+                      language="id"
+                    />
+                  </TabsContent>
+                  <TabsContent value="en" className="mt-4">
+                    <SEOAudit
+                      title={contentEn?.hero?.title || contentEn?.title || ''}
+                      metaTitle={contentEn?.meta_title || contentEn?.hero?.title || ''}
+                      metaDescription={contentEn?.meta_description || contentEn?.hero?.subtitle || ''}
+                      content={JSON.stringify(contentEn)}
+                      language="en"
+                    />
+                  </TabsContent>
+                </Tabs>
+              </div>
+            )}
           </div>
+
+          {/* SEO Audit side-by-side when preview is OFF */}
+          {!showPreview && (
+            <div className="hidden lg:block sticky top-6">
+              <Tabs defaultValue="id">
+                <TabsList className="w-full">
+                  <TabsTrigger value="id" className="flex-1">SEO (ID)</TabsTrigger>
+                  <TabsTrigger value="en" className="flex-1">SEO (EN)</TabsTrigger>
+                </TabsList>
+                <TabsContent value="id" className="mt-4">
+                  <SEOAudit
+                    title={contentId?.hero?.title || contentId?.title || ''}
+                    metaTitle={contentId?.meta_title || contentId?.hero?.title || ''}
+                    metaDescription={contentId?.meta_description || contentId?.hero?.subtitle || ''}
+                    content={JSON.stringify(contentId)}
+                    language="id"
+                  />
+                </TabsContent>
+                <TabsContent value="en" className="mt-4">
+                  <SEOAudit
+                    title={contentEn?.hero?.title || contentEn?.title || ''}
+                    metaTitle={contentEn?.meta_title || contentEn?.hero?.title || ''}
+                    metaDescription={contentEn?.meta_description || contentEn?.hero?.subtitle || ''}
+                    content={JSON.stringify(contentEn)}
+                    language="en"
+                  />
+                </TabsContent>
+              </Tabs>
+            </div>
+          )}
           
-          <div className="hidden xl:block sticky top-6">
-            <LivePreview 
-              path={pageRoutes[pageKey || ''] || '/'} 
-              title="Live Preview" 
-            />
-          </div>
+          {showPreview && (
+            <div className="hidden xl:block sticky top-6">
+              <LivePreview 
+                path={pageRoutes[pageKey || ''] || '/'} 
+                title="Live Preview" 
+              />
+            </div>
+          )}
         </div>
       </div>
     </AdminLayout>

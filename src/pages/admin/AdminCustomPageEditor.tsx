@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import AdminLayout from '@/components/admin/AdminLayout';
@@ -26,6 +26,7 @@ import {
 } from '@/hooks/useCustomPages';
 import ImageUploader from '@/components/admin/ImageUploader';
 import ContentBlockEditor, { ContentBlock } from '@/components/admin/ContentBlockEditor';
+import SEOAudit from '@/components/admin/SEOAudit';
 
 interface PageFormData {
   title_en: string;
@@ -169,9 +170,10 @@ export default function AdminCustomPageEditor() {
                 </a>
               </Button>
             )}
-            <Button onClick={handleSave} disabled={isPending || !formData.title_en || !formData.slug}>
-              {isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              <Save className="h-4 w-4 mr-2" />
+            <Button onClick={handleSave} disabled={isPending || !formData.title_en || !formData.slug} className="min-w-[100px]">
+              <span className="w-4 h-4 mr-2 inline-flex items-center justify-center">
+                {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              </span>
               {language === 'en' ? 'Save' : 'Simpan'}
             </Button>
           </div>
@@ -246,14 +248,57 @@ export default function AdminCustomPageEditor() {
 
             <Card>
               <CardHeader>
-                <CardTitle>{language === 'en' ? 'Page Content' : 'Konten Halaman'}</CardTitle>
-                <CardDescription>
-                  {language === 'en' 
-                    ? 'Write your page content using the rich text editor' 
-                    : 'Tulis konten halaman menggunakan editor teks kaya'}
-                </CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>{language === 'en' ? 'Page Content' : 'Konten Halaman'}</CardTitle>
+                    <CardDescription>
+                      {language === 'en' 
+                        ? 'Write your page content using the rich text editor' 
+                        : 'Tulis konten halaman menggunakan editor teks kaya'}
+                    </CardDescription>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      // Sync images from EN blocks to ID blocks
+                      const syncedBlocksId = blocksId.map((block, index) => {
+                        const enBlock = blocksEn[index];
+                        if (!enBlock) return block;
+                        
+                        // Deep copy and sync image fields
+                        const syncedData = { ...block.data };
+                        
+                        // Sync common image fields
+                        if (enBlock.data.background_image) syncedData.background_image = enBlock.data.background_image;
+                        if (enBlock.data.author_image) syncedData.author_image = enBlock.data.author_image;
+                        if (enBlock.data.images) syncedData.images = enBlock.data.images;
+                        
+                        // Sync images in array items (team members, etc.)
+                        if (enBlock.data.items && Array.isArray(enBlock.data.items)) {
+                          syncedData.items = (syncedData.items || []).map((item: any, i: number) => {
+                            const enItem = enBlock.data.items?.[i];
+                            if (enItem?.image) return { ...item, image: enItem.image };
+                            return item;
+                          });
+                        }
+                        
+                        return { ...block, data: syncedData };
+                      });
+                      setBlocksId(syncedBlocksId);
+                    }}
+                  >
+                    {language === 'en' ? 'Sync Images EN → ID' : 'Sinkron Gambar EN → ID'}
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent className="space-y-6">
+                <p className="text-xs text-muted-foreground -mt-2">
+                  {language === 'en' 
+                    ? 'Tip: Add content blocks in English first, then click "Sync Images" to copy images to Indonesian version.' 
+                    : 'Tips: Tambahkan blok konten di versi English dulu, lalu klik "Sinkron Gambar" untuk menyalin gambar ke versi Indonesia.'}
+                </p>
                 <div>
                   <Label className="mb-2 block">Content (English)</Label>
                   <ContentBlockEditor
@@ -273,78 +318,112 @@ export default function AdminCustomPageEditor() {
           </TabsContent>
 
           <TabsContent value="seo" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>{language === 'en' ? 'SEO Settings' : 'Pengaturan SEO'}</CardTitle>
-                <CardDescription>
-                  {language === 'en' 
-                    ? 'Optimize your page for search engines' 
-                    : 'Optimalkan halaman untuk mesin pencari'}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label>Meta Title (English)</Label>
-                    <Input
-                      value={formData.meta_title_en}
-                      onChange={(e) => setFormData(prev => ({ ...prev, meta_title_en: e.target.value }))}
-                      placeholder="SEO Title"
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {formData.meta_title_en.length}/60 characters
-                    </p>
-                  </div>
-                  <div>
-                    <Label>Meta Title (Indonesian)</Label>
-                    <Input
-                      value={formData.meta_title_id}
-                      onChange={(e) => setFormData(prev => ({ ...prev, meta_title_id: e.target.value }))}
-                      placeholder="Judul SEO"
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {formData.meta_title_id.length}/60 characters
-                    </p>
-                  </div>
-                </div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2 space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>{language === 'en' ? 'SEO Settings' : 'Pengaturan SEO'}</CardTitle>
+                    <CardDescription>
+                      {language === 'en' 
+                        ? 'Optimize your page for search engines' 
+                        : 'Optimalkan halaman untuk mesin pencari'}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label>Meta Title (English)</Label>
+                        <Input
+                          value={formData.meta_title_en}
+                          onChange={(e) => setFormData(prev => ({ ...prev, meta_title_en: e.target.value }))}
+                          placeholder="SEO Title"
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {formData.meta_title_en.length}/60 characters
+                        </p>
+                      </div>
+                      <div>
+                        <Label>Meta Title (Indonesian)</Label>
+                        <Input
+                          value={formData.meta_title_id}
+                          onChange={(e) => setFormData(prev => ({ ...prev, meta_title_id: e.target.value }))}
+                          placeholder="Judul SEO"
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {formData.meta_title_id.length}/60 characters
+                        </p>
+                      </div>
+                    </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label>Meta Description (English)</Label>
-                    <Textarea
-                      value={formData.meta_description_en}
-                      onChange={(e) => setFormData(prev => ({ ...prev, meta_description_en: e.target.value }))}
-                      placeholder="Brief description for search results"
-                      rows={3}
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {formData.meta_description_en.length}/160 characters
-                    </p>
-                  </div>
-                  <div>
-                    <Label>Meta Description (Indonesian)</Label>
-                    <Textarea
-                      value={formData.meta_description_id}
-                      onChange={(e) => setFormData(prev => ({ ...prev, meta_description_id: e.target.value }))}
-                      placeholder="Deskripsi singkat untuk hasil pencarian"
-                      rows={3}
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {formData.meta_description_id.length}/160 characters
-                    </p>
-                  </div>
-                </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label>Meta Description (English)</Label>
+                        <Textarea
+                          value={formData.meta_description_en}
+                          onChange={(e) => setFormData(prev => ({ ...prev, meta_description_en: e.target.value }))}
+                          placeholder="Brief description for search results"
+                          rows={3}
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {formData.meta_description_en.length}/160 characters
+                        </p>
+                      </div>
+                      <div>
+                        <Label>Meta Description (Indonesian)</Label>
+                        <Textarea
+                          value={formData.meta_description_id}
+                          onChange={(e) => setFormData(prev => ({ ...prev, meta_description_id: e.target.value }))}
+                          placeholder="Deskripsi singkat untuk hasil pencarian"
+                          rows={3}
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {formData.meta_description_id.length}/160 characters
+                        </p>
+                      </div>
+                    </div>
 
-                <div>
-                  <Label>OG Image (Social Sharing)</Label>
-                  <ImageUploader
-                    value={formData.og_image}
-                    onChange={(url) => setFormData(prev => ({ ...prev, og_image: url }))}
-                    folder="pages"
-                  />
+                    <div>
+                      <Label>OG Image (Social Sharing)</Label>
+                      <ImageUploader
+                        value={formData.og_image}
+                        onChange={(url) => setFormData(prev => ({ ...prev, og_image: url }))}
+                        folder="pages"
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* SEO Audit Panel */}
+              <div className="space-y-4">
+                <div className="sticky top-6">
+                  <Tabs defaultValue="id">
+                    <TabsList className="w-full">
+                      <TabsTrigger value="id" className="flex-1">Indonesia</TabsTrigger>
+                      <TabsTrigger value="en" className="flex-1">English</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="id" className="mt-4">
+                      <SEOAudit
+                        title={formData.title_id}
+                        metaTitle={formData.meta_title_id}
+                        metaDescription={formData.meta_description_id}
+                        content={blocksId.map(b => JSON.stringify(b.data || {})).join(' ')}
+                        language="id"
+                      />
+                    </TabsContent>
+                    <TabsContent value="en" className="mt-4">
+                      <SEOAudit
+                        title={formData.title_en}
+                        metaTitle={formData.meta_title_en}
+                        metaDescription={formData.meta_description_en}
+                        content={blocksEn.map(b => JSON.stringify(b.data || {})).join(' ')}
+                        language="en"
+                      />
+                    </TabsContent>
+                  </Tabs>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </TabsContent>
 
           <TabsContent value="settings" className="space-y-6">

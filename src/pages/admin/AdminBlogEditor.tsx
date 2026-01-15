@@ -8,11 +8,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
-import { ArrowLeft, Loader2, Save } from 'lucide-react';
+import { ArrowLeft, Loader2, Save, Eye, EyeOff } from 'lucide-react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import ImageUploader from '@/components/admin/ImageUploader';
 import RichTextEditor from '@/components/admin/RichTextEditor';
 import LivePreview from '@/components/admin/LivePreview';
+import SEOAudit from '@/components/admin/SEOAudit';
 
 export default function AdminBlogEditor() {
   const { id } = useParams<{ id: string }>();
@@ -23,6 +24,7 @@ export default function AdminBlogEditor() {
   const createBlog = useCreateBlog();
   const updateBlog = useUpdateBlog();
 
+  const [showPreview, setShowPreview] = useState(true);
   const [formData, setFormData] = useState({
     title_en: '',
     title_id: '',
@@ -103,6 +105,17 @@ export default function AdminBlogEditor() {
             </h1>
           </div>
           <div className="flex items-center gap-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowPreview(!showPreview)}
+              className="hidden xl:flex"
+            >
+              {showPreview ? <EyeOff className="h-4 w-4 mr-2" /> : <Eye className="h-4 w-4 mr-2" />}
+              {showPreview 
+                ? (language === 'en' ? 'Hide Preview' : 'Sembunyikan Preview')
+                : (language === 'en' ? 'Show Preview' : 'Tampilkan Preview')}
+            </Button>
             <div className="flex items-center gap-2">
               <Switch
                 checked={formData.is_published}
@@ -110,82 +123,114 @@ export default function AdminBlogEditor() {
               />
               <Label>{language === 'en' ? 'Published' : 'Terbit'}</Label>
             </div>
-            <Button onClick={handleSave} disabled={isPending}>
-              {isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+            <Button onClick={handleSave} disabled={isPending} className="min-w-[100px]">
+              <span className="w-4 h-4 mr-2 inline-flex items-center justify-center">
+                {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              </span>
               {language === 'en' ? 'Save' : 'Simpan'}
             </Button>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 space-y-6">
-              <Tabs defaultValue="en">
-                <TabsList>
-                  <TabsTrigger value="en">English</TabsTrigger>
-                  <TabsTrigger value="id">Indonesia</TabsTrigger>
-                </TabsList>
+        <div className={`grid gap-6 ${showPreview ? 'grid-cols-1 xl:grid-cols-2' : 'grid-cols-1 lg:grid-cols-3'}`}>
+          <div className={`grid grid-cols-1 ${showPreview ? 'lg:grid-cols-3' : 'lg:col-span-2'} gap-6`}>
+            <div className={showPreview ? 'lg:col-span-2' : ''} >
+              <div className="space-y-6">
+                <Tabs defaultValue="en">
+                  <TabsList>
+                    <TabsTrigger value="en">English</TabsTrigger>
+                    <TabsTrigger value="id">Indonesia</TabsTrigger>
+                  </TabsList>
 
-                <TabsContent value="en" className="space-y-4">
-                  <div>
-                    <Label>Title (H1)</Label>
-                    <Input
-                      value={formData.title_en}
-                      onChange={(e) => {
-                        setFormData(prev => ({ 
-                          ...prev, 
-                          title_en: e.target.value,
-                          slug: isNew ? generateSlug(e.target.value) : prev.slug
-                        }));
-                      }}
-                      placeholder="Enter blog title..."
-                    />
-                  </div>
-                  <div>
-                    <Label>Excerpt</Label>
-                    <Input
-                      value={formData.excerpt_en}
-                      onChange={(e) => setFormData(prev => ({ ...prev, excerpt_en: e.target.value }))}
-                      placeholder="Brief summary..."
-                    />
-                  </div>
-                  <div>
-                    <Label>Content (Use H1, H2, H3 for SEO)</Label>
-                    <RichTextEditor
-                      value={formData.content_en}
-                      onChange={(value) => setFormData(prev => ({ ...prev, content_en: value }))}
-                      placeholder="Write your blog content..."
-                    />
-                  </div>
-                </TabsContent>
+                  <TabsContent value="en" className="space-y-4">
+                    <div>
+                      <Label>Title (H1)</Label>
+                      <Input
+                        value={formData.title_en}
+                        onChange={(e) => {
+                          setFormData(prev => ({ 
+                            ...prev, 
+                            title_en: e.target.value,
+                            slug: isNew ? generateSlug(e.target.value) : prev.slug
+                          }));
+                        }}
+                        placeholder="Enter blog title..."
+                      />
+                    </div>
+                    <div>
+                      <Label>Excerpt</Label>
+                      <Input
+                        value={formData.excerpt_en}
+                        onChange={(e) => setFormData(prev => ({ ...prev, excerpt_en: e.target.value }))}
+                        placeholder="Brief summary..."
+                      />
+                    </div>
+                    <div>
+                      <Label>Content (Use H1, H2, H3 for SEO)</Label>
+                      <RichTextEditor
+                        value={formData.content_en}
+                        onChange={(value) => setFormData(prev => ({ ...prev, content_en: value }))}
+                        placeholder="Write your blog content..."
+                      />
+                    </div>
+                  </TabsContent>
 
-                <TabsContent value="id" className="space-y-4">
-                  <div>
-                    <Label>Judul (H1)</Label>
-                    <Input
-                      value={formData.title_id}
-                      onChange={(e) => setFormData(prev => ({ ...prev, title_id: e.target.value }))}
-                      placeholder="Masukkan judul blog..."
-                    />
-                  </div>
-                  <div>
-                    <Label>Ringkasan</Label>
-                    <Input
-                      value={formData.excerpt_id}
-                      onChange={(e) => setFormData(prev => ({ ...prev, excerpt_id: e.target.value }))}
-                      placeholder="Ringkasan singkat..."
-                    />
-                  </div>
-                  <div>
-                    <Label>Konten (Gunakan H1, H2, H3 untuk SEO)</Label>
-                    <RichTextEditor
-                      value={formData.content_id}
-                      onChange={(value) => setFormData(prev => ({ ...prev, content_id: value }))}
-                      placeholder="Tulis konten blog Anda..."
-                    />
-                  </div>
-                </TabsContent>
-              </Tabs>
+                  <TabsContent value="id" className="space-y-4">
+                    <div>
+                      <Label>Judul (H1)</Label>
+                      <Input
+                        value={formData.title_id}
+                        onChange={(e) => setFormData(prev => ({ ...prev, title_id: e.target.value }))}
+                        placeholder="Masukkan judul blog..."
+                      />
+                    </div>
+                    <div>
+                      <Label>Ringkasan</Label>
+                      <Input
+                        value={formData.excerpt_id}
+                        onChange={(e) => setFormData(prev => ({ ...prev, excerpt_id: e.target.value }))}
+                        placeholder="Ringkasan singkat..."
+                      />
+                    </div>
+                    <div>
+                      <Label>Konten (Gunakan H1, H2, H3 untuk SEO)</Label>
+                      <RichTextEditor
+                        value={formData.content_id}
+                        onChange={(value) => setFormData(prev => ({ ...prev, content_id: value }))}
+                        placeholder="Tulis konten blog Anda..."
+                      />
+                    </div>
+                  </TabsContent>
+                </Tabs>
+
+                {/* SEO Audit below form when preview is ON */}
+                {showPreview && (
+                  <Tabs defaultValue="id">
+                    <TabsList className="w-full">
+                      <TabsTrigger value="id" className="flex-1">SEO (ID)</TabsTrigger>
+                      <TabsTrigger value="en" className="flex-1">SEO (EN)</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="id" className="mt-4">
+                      <SEOAudit
+                        title={formData.title_id}
+                        metaTitle={formData.meta_title_id || formData.title_id}
+                        metaDescription={formData.meta_description_id || formData.excerpt_id}
+                        content={formData.content_id}
+                        language="id"
+                      />
+                    </TabsContent>
+                    <TabsContent value="en" className="mt-4">
+                      <SEOAudit
+                        title={formData.title_en}
+                        metaTitle={formData.meta_title_en || formData.title_en}
+                        metaDescription={formData.meta_description_en || formData.excerpt_en}
+                        content={formData.content_en}
+                        language="en"
+                      />
+                    </TabsContent>
+                  </Tabs>
+                )}
+              </div>
             </div>
 
             <div className="space-y-6">
@@ -262,29 +307,61 @@ export default function AdminBlogEditor() {
               </Card>
             </div>
           </div>
+
+          {/* SEO Audit side-by-side when preview is OFF */}
+          {!showPreview && (
+            <div className="hidden lg:block sticky top-6">
+              <Tabs defaultValue="id">
+                <TabsList className="w-full">
+                  <TabsTrigger value="id" className="flex-1">SEO (ID)</TabsTrigger>
+                  <TabsTrigger value="en" className="flex-1">SEO (EN)</TabsTrigger>
+                </TabsList>
+                <TabsContent value="id" className="mt-4">
+                  <SEOAudit
+                    title={formData.title_id}
+                    metaTitle={formData.meta_title_id || formData.title_id}
+                    metaDescription={formData.meta_description_id || formData.excerpt_id}
+                    content={formData.content_id}
+                    language="id"
+                  />
+                </TabsContent>
+                <TabsContent value="en" className="mt-4">
+                  <SEOAudit
+                    title={formData.title_en}
+                    metaTitle={formData.meta_title_en || formData.title_en}
+                    metaDescription={formData.meta_description_en || formData.excerpt_en}
+                    content={formData.content_en}
+                    language="en"
+                  />
+                </TabsContent>
+              </Tabs>
+            </div>
+          )}
           
-          <div className="hidden xl:block sticky top-6">
-            {isNew ? (
-              <Card className="h-[600px] flex items-center justify-center">
-                <CardContent className="text-center text-muted-foreground">
-                  <p className="text-lg font-medium mb-2">Blog Preview</p>
-                  <p className="text-sm">Save the blog post to see preview</p>
-                </CardContent>
-              </Card>
-            ) : formData.slug ? (
-              <LivePreview 
-                path={`/blog/${formData.slug}`} 
-                title="Blog Preview" 
-              />
-            ) : (
-              <Card className="h-[600px] flex items-center justify-center">
-                <CardContent className="text-center text-muted-foreground">
-                  <p className="text-lg font-medium mb-2">Blog Preview</p>
-                  <p className="text-sm">Add a slug to see preview</p>
-                </CardContent>
-              </Card>
-            )}
-          </div>
+          {showPreview && (
+            <div className="hidden xl:block sticky top-6">
+              {isNew ? (
+                <Card className="h-[600px] flex items-center justify-center">
+                  <CardContent className="text-center text-muted-foreground">
+                    <p className="text-lg font-medium mb-2">Blog Preview</p>
+                    <p className="text-sm">Save the blog post to see preview</p>
+                  </CardContent>
+                </Card>
+              ) : formData.slug ? (
+                <LivePreview 
+                  path={`/blog/${formData.slug}`} 
+                  title="Blog Preview" 
+                />
+              ) : (
+                <Card className="h-[600px] flex items-center justify-center">
+                  <CardContent className="text-center text-muted-foreground">
+                    <p className="text-lg font-medium mb-2">Blog Preview</p>
+                    <p className="text-sm">Add a slug to see preview</p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </AdminLayout>

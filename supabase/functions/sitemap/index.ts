@@ -37,10 +37,25 @@ serve(async (req) => {
       });
     }
 
-    const baseUrl = seo?.site_url || 'https://bungkusindonesia.com';
+    const baseUrl = seo?.site_url || 'https://bungkusin.co.id';
     const pageIndexing = seo?.page_indexing || {};
 
-    // Define all static pages with their routes
+    // Get page content for accurate lastmod dates
+    const { data: pageContent } = await supabase
+      .from('page_content')
+      .select('page_key, updated_at');
+
+    // Create a map of page_key to updated_at
+    const pageLastMod: Record<string, string> = {};
+    if (pageContent) {
+      for (const page of pageContent) {
+        pageLastMod[page.page_key] = page.updated_at?.split('T')[0] || new Date().toISOString().split('T')[0];
+      }
+    }
+
+    const today = new Date().toISOString().split('T')[0];
+
+    // Define all static pages with their routes (excluding admin pages)
     const staticPages = [
       { key: 'home', path: '/', priority: '1.0', changefreq: 'weekly' },
       { key: 'about', path: '/tentang-kami', priority: '0.8', changefreq: 'monthly' },
@@ -65,17 +80,23 @@ serve(async (req) => {
       .eq('is_published', true)
       .order('created_at', { ascending: false });
 
-    const today = new Date().toISOString().split('T')[0];
+    // Get published custom pages
+    const { data: customPages } = await supabase
+      .from('custom_pages')
+      .select('slug, updated_at, created_at')
+      .eq('status', 'published')
+      .order('created_at', { ascending: false });
 
     // Build XML
     let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
     xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
 
-    // Add static pages
+    // Add static pages with accurate lastmod from page_content
     for (const page of indexedPages) {
+      const lastmod = pageLastMod[page.key] || today;
       xml += `  <url>\n`;
       xml += `    <loc>${baseUrl}${page.path}</loc>\n`;
-      xml += `    <lastmod>${today}</lastmod>\n`;
+      xml += `    <lastmod>${lastmod}</lastmod>\n`;
       xml += `    <changefreq>${page.changefreq}</changefreq>\n`;
       xml += `    <priority>${page.priority}</priority>\n`;
       xml += `  </url>\n`;
@@ -94,9 +115,26 @@ serve(async (req) => {
       }
     }
 
+    // Add custom pages (check individual page indexing)
+    if (customPages) {
+      for (const page of customPages) {
+        // Skip if this specific custom page is set to noindex
+        const pageKey = `custom-${page.slug}`;
+        if (pageIndexing[pageKey] === false) continue;
+
+        const lastmod = page.updated_at || page.created_at || today;
+        xml += `  <url>\n`;
+        xml += `    <loc>${baseUrl}/p/${page.slug}</loc>\n`;
+        xml += `    <lastmod>${lastmod.split('T')[0]}</lastmod>\n`;
+        xml += `    <changefreq>monthly</changefreq>\n`;
+        xml += `    <priority>0.7</priority>\n`;
+        xml += `  </url>\n`;
+      }
+    }
+
     xml += '</urlset>';
 
-    console.log(`Sitemap generated with ${indexedPages.length} pages and ${blogs?.length || 0} blog posts`);
+    console.log(`Sitemap generated with ${indexedPages.length} static pages, ${blogs?.length || 0} blog posts, and ${customPages?.length || 0} custom pages`);
 
     return new Response(xml, { headers: corsHeaders });
   } catch (error) {

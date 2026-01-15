@@ -8,6 +8,7 @@ import { useSiteSettings } from '@/hooks/useSiteSettings';
 import { useNavigationMenusHierarchy, NavigationMenu } from '@/hooks/useNavigationMenus';
 import logoWhite from '@/assets/logo-white.png';
 import logoDarkBlue from '@/assets/logo-dark-blue.png';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,28 +37,6 @@ export function Navbar() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Fallback navigation links (used when database is loading or empty)
-  const fallbackNavLinks = [
-    { href: '/', label: t('Beranda', 'Home') },
-    {
-      label: t('Solusi', 'Solutions'),
-      children: [
-        { href: '/solusi-korporat', label: t('Korporat', 'Corporate') },
-        { href: '/solusi-umkm', label: 'UMKM' },
-      ],
-    },
-    {
-      label: t('Produk', 'Products'),
-      children: [
-        { href: '/produk', label: t('Kategori Industri', 'Industry Categories') },
-        { href: '/produk/katalog', label: t('Katalog Produk', 'Product Catalog') },
-      ],
-    },
-    { href: '/case-studies', label: 'Case Studies' },
-    { href: '/blog', label: 'Blog' },
-    { href: '/tentang-kami', label: t('Tentang Kami', 'About Us') },
-  ];
-
   // Transform database menus to nav link format
   const transformMenuToNavLink = (menu: NavigationMenu): { href?: string; label: string; children?: { href: string; label: string }[] } => {
     const label = language === 'id' ? menu.label_id : menu.label_en;
@@ -78,10 +57,23 @@ export function Navbar() {
     };
   };
 
-  // Use dynamic menus if available, otherwise fallback
+  // Use dynamic menus only - no fallback that would flash
   const navLinks = dynamicMenus && dynamicMenus.length > 0
     ? dynamicMenus.map(transformMenuToNavLink)
-    : fallbackNavLinks;
+    : [];
+
+  // Check if current path is active (direct match or child match)
+  const isActiveLink = (link: { href?: string; children?: { href: string; label: string }[] }): boolean => {
+    // Direct link match
+    if (link.href && location.pathname === link.href) return true;
+    
+    // Check if current path matches any child
+    if (link.children) {
+      return link.children.some(child => location.pathname === child.href);
+    }
+    
+    return false;
+  };
 
   const navBg = isHome && !isScrolled 
     ? 'bg-transparent' 
@@ -99,6 +91,18 @@ export function Navbar() {
     ? 'bg-white text-primary hover:bg-white/90'
     : 'bg-primary text-white hover:bg-primary/90';
 
+  // Skeleton for nav items while loading
+  const NavSkeleton = () => (
+    <div className="hidden lg:flex items-center gap-1">
+      {[1, 2, 3, 4, 5].map((i) => (
+        <Skeleton 
+          key={i} 
+          className={`h-8 w-20 ${isHome && !isScrolled ? 'bg-white/20' : ''}`} 
+        />
+      ))}
+    </div>
+  );
+
   return (
     <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${navBg}`}>
       <div className="container mx-auto px-4">
@@ -109,39 +113,50 @@ export function Navbar() {
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center gap-1">
-            {navLinks.map((link, index) => (
-              'children' in link && link.children ? (
-                <DropdownMenu key={index}>
-                  <DropdownMenuTrigger asChild>
-                    <button className={`nav-item-3d flex items-center gap-1 px-4 py-2 text-sm font-medium ${textColor} hover:text-secondary transition-all`}>
-                      {link.label}
-                      <ChevronDown className="h-4 w-4" />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="w-48">
-                    {link.children.map((child) => (
-                      <DropdownMenuItem key={child.href} asChild>
-                        <Link to={child.href} className="cursor-pointer">
-                          {child.label}
-                        </Link>
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              ) : (
-                <Link
-                  key={link.href}
-                  to={link.href!}
-                  className={`nav-item-3d px-4 py-2 text-sm font-medium ${textColor} hover:text-secondary transition-all ${
-                    location.pathname === link.href ? 'text-secondary' : ''
-                  }`}
-                >
-                  {link.label}
-                </Link>
-              )
-            ))}
-          </div>
+          {menusLoading ? (
+            <NavSkeleton />
+          ) : navLinks.length > 0 ? (
+            <div className="hidden lg:flex items-center gap-1">
+              {navLinks.map((link, index) => (
+                'children' in link && link.children ? (
+                  <DropdownMenu key={index}>
+                    <DropdownMenuTrigger asChild>
+                      <button className={`nav-item-3d flex items-center gap-1 px-4 py-2 text-sm font-medium ${textColor} hover:text-secondary transition-all ${
+                        isActiveLink(link) ? 'active' : ''
+                      }`}>
+                        {link.label}
+                        <ChevronDown className="h-4 w-4" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="w-48">
+                      {link.children.map((child) => (
+                        <DropdownMenuItem key={child.href} asChild>
+                          <Link 
+                            to={child.href} 
+                            className={`cursor-pointer ${location.pathname === child.href ? 'bg-secondary/10 text-secondary font-medium' : ''}`}
+                          >
+                            {child.label}
+                          </Link>
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : (
+                  <Link
+                    key={link.href}
+                    to={link.href!}
+                    className={`nav-item-3d px-4 py-2 text-sm font-medium ${textColor} hover:text-secondary transition-all ${
+                      location.pathname === link.href ? 'active' : ''
+                    }`}
+                  >
+                    {link.label}
+                  </Link>
+                )
+              ))}
+            </div>
+          ) : (
+            <div className="hidden lg:flex items-center gap-1" />
+          )}
 
           {/* Right Side */}
           <div className="hidden lg:flex items-center gap-3">
@@ -196,44 +211,52 @@ export function Navbar() {
         <div className="lg:hidden bg-background border-t animate-fade-in">
           <div className="container mx-auto px-4 py-4">
             <div className="flex flex-col gap-2">
-              {navLinks.map((link, index) => (
-                'children' in link && link.children ? (
-                  <div key={index} className="py-2">
-                    <span className="text-sm font-medium text-muted-foreground px-3">
-                      {link.label}
-                    </span>
-                    <div className="mt-1 pl-4">
-                      {link.children.map((child) => (
-                        <Link
-                          key={child.href}
-                          to={child.href}
-                          className={`block px-3 py-2 text-sm transition-colors ${
-                            location.pathname === child.href 
-                              ? 'text-secondary bg-secondary/10 rounded-md font-medium' 
-                              : 'hover:text-secondary'
-                          }`}
-                          onClick={() => setIsOpen(false)}
-                        >
-                          {child.label}
-                        </Link>
-                      ))}
+              {menusLoading ? (
+                <div className="space-y-2">
+                  {[1, 2, 3, 4].map((i) => (
+                    <Skeleton key={i} className="h-10 w-full" />
+                  ))}
+                </div>
+              ) : (
+                navLinks.map((link, index) => (
+                  'children' in link && link.children ? (
+                    <div key={index} className="py-2">
+                      <span className="text-sm font-medium text-muted-foreground px-3">
+                        {link.label}
+                      </span>
+                      <div className="mt-1 pl-4">
+                        {link.children.map((child) => (
+                          <Link
+                            key={child.href}
+                            to={child.href}
+                            className={`block px-3 py-2 text-sm transition-colors ${
+                              location.pathname === child.href 
+                                ? 'text-secondary bg-secondary/10 rounded-md font-medium' 
+                                : 'hover:text-secondary'
+                            }`}
+                            onClick={() => setIsOpen(false)}
+                          >
+                            {child.label}
+                          </Link>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ) : (
-                  <Link
-                    key={link.href}
-                    to={link.href!}
-                    className={`px-3 py-2 text-sm font-medium transition-colors rounded-md ${
-                      location.pathname === link.href 
-                        ? 'text-secondary bg-secondary/10' 
-                        : 'hover:text-secondary'
-                    }`}
-                    onClick={() => setIsOpen(false)}
-                  >
-                    {link.label}
-                  </Link>
-                )
-              ))}
+                  ) : (
+                    <Link
+                      key={link.href}
+                      to={link.href!}
+                      className={`px-3 py-2 text-sm font-medium transition-colors rounded-md ${
+                        location.pathname === link.href 
+                          ? 'text-secondary bg-secondary/10' 
+                          : 'hover:text-secondary'
+                      }`}
+                      onClick={() => setIsOpen(false)}
+                    >
+                      {link.label}
+                    </Link>
+                  )
+                ))
+              )}
               
               <div className="flex items-center gap-2 pt-4 border-t mt-2">
                 <Button

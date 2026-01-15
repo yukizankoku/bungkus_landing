@@ -1,13 +1,6 @@
 import React from 'react';
-import { Package, Shield, Users, Zap, LucideIcon } from 'lucide-react';
-import { useLanguage } from '@/contexts/LanguageContext';
-
-const iconMap: Record<string, LucideIcon> = {
-  Package,
-  Shield,
-  Users,
-  Zap,
-};
+import { Package } from 'lucide-react';
+import { iconMap } from '@/lib/iconMap';
 
 interface FeatureItem {
   icon?: string;
@@ -21,66 +14,32 @@ interface FeaturesSectionProps {
   items?: FeatureItem[];
 }
 
-const defaultFeatures = [
-  {
-    icon: 'Package',
-    titleId: 'Kapasitas Produksi Besar',
-    titleEn: 'Large Production Capacity',
-    descId: 'Mampu memenuhi kebutuhan kemasan dalam skala besar untuk berbagai industri.',
-    descEn: 'Capable of meeting large-scale packaging needs for various industries.',
-  },
-  {
-    icon: 'Shield',
-    titleId: 'Food-Grade & Aman',
-    titleEn: 'Food-Grade & Safe',
-    descId: 'Material berkualitas tinggi yang aman untuk makanan dan minuman.',
-    descEn: 'High-quality materials that are safe for food and beverages.',
-  },
-  {
-    icon: 'Users',
-    titleId: 'Kemitraan Jangka Panjang',
-    titleEn: 'Long-term Partnership',
-    descId: 'Kami fokus membangun hubungan bisnis yang berkelanjutan.',
-    descEn: 'We focus on building sustainable business relationships.',
-  },
-  {
-    icon: 'Zap',
-    titleId: 'Custom Branding',
-    titleEn: 'Custom Branding',
-    descId: 'Desain kemasan custom sesuai identitas brand Anda.',
-    descEn: 'Custom packaging design according to your brand identity.',
-  },
-];
-
 export function FeaturesSection({ title, subtitle, items }: FeaturesSectionProps) {
-  const { t, language } = useLanguage();
-
-  const displayTitle = title || t('Mengapa Memilih Kami?', 'Why Choose Us?');
-  const displaySubtitle = subtitle || t(
-    'Kami berkomitmen memberikan solusi kemasan terbaik untuk bisnis Anda.',
-    'We are committed to providing the best packaging solutions for your business.'
-  );
-
-  const displayItems = items?.length ? items : defaultFeatures.map(f => ({
-    icon: f.icon,
-    title: language === 'id' ? f.titleId : f.titleEn,
-    description: language === 'id' ? f.descId : f.descEn,
-  }));
+  // Don't render if no items provided (CMS not configured)
+  if (!items || items.length === 0) {
+    return null;
+  }
 
   return (
     <section className="py-16 bg-background">
       <div className="container mx-auto px-4">
-        <div className="text-center max-w-3xl mx-auto mb-16">
-          <h2 className="text-3xl sm:text-4xl font-display font-bold text-foreground mb-4">
-            {displayTitle}
-          </h2>
-          <p className="text-muted-foreground text-lg">
-            {displaySubtitle}
-          </p>
-        </div>
+        {(title || subtitle) && (
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            {title && (
+              <h2 className="text-3xl sm:text-4xl font-display font-bold text-foreground mb-4">
+                {title}
+              </h2>
+            )}
+            {subtitle && (
+              <p className="text-muted-foreground text-lg">
+                {subtitle}
+              </p>
+            )}
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {displayItems.map((feature, index) => {
+          {items.map((feature, index) => {
             const IconComponent = iconMap[feature.icon || 'Package'] || Package;
             return (
               <div

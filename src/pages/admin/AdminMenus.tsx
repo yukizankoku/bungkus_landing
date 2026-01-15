@@ -42,7 +42,7 @@ import {
   Menu as MenuIcon
 } from 'lucide-react';
 import { 
-  useNavigationMenus,
+  useAllNavigationMenus,
   useNavigationMenusHierarchy,
   useCreateNavigationMenu,
   useUpdateNavigationMenu,
@@ -50,6 +50,7 @@ import {
   useReorderNavigationMenus,
   NavigationMenu 
 } from '@/hooks/useNavigationMenus';
+import PageLinkSelector from '@/components/admin/PageLinkSelector';
 import { cn } from '@/lib/utils';
 import {
   DndContext,
@@ -267,8 +268,8 @@ function SortableMenuList({
 
 export default function AdminMenus() {
   const { language } = useLanguage();
-  const { data: hierarchicalMenus, isLoading, refetch } = useNavigationMenusHierarchy();
-  const { data: flatMenus } = useNavigationMenus();
+  const { data: hierarchicalMenus, isLoading, refetch } = useNavigationMenusHierarchy(true); // Include hidden items
+  const { data: flatMenus } = useAllNavigationMenus();
   const createMenu = useCreateNavigationMenu();
   const updateMenu = useUpdateNavigationMenu();
   const deleteMenu = useDeleteNavigationMenu();
@@ -477,10 +478,9 @@ export default function AdminMenus() {
 
             <div>
               <Label>Link URL</Label>
-              <Input
+              <PageLinkSelector
                 value={formData.href}
-                onChange={(e) => setFormData(prev => ({ ...prev, href: e.target.value }))}
-                placeholder="/page-url (leave empty for dropdown parent)"
+                onChange={(value) => setFormData(prev => ({ ...prev, href: value }))}
               />
               <p className="text-xs text-muted-foreground mt-1">
                 {language === 'en' 
