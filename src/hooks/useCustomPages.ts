@@ -19,6 +19,7 @@ export interface CustomPage {
   og_image: string | null;
   sort_order: number;
   is_in_menu: boolean;
+  use_prefix: boolean;
   created_at: string;
   updated_at: string;
   children?: CustomPage[];
@@ -64,6 +65,52 @@ export function useCustomPageBySlug(slug: string) {
         .select('*')
         .eq('slug', slug)
         .eq('status', 'published')
+        .single();
+      
+      if (error) {
+        if (error.code === 'PGRST116') return null; // Not found
+        throw error;
+      }
+      return data as CustomPage;
+    },
+    enabled: !!slug,
+  });
+}
+
+// For root-level pages (use_prefix = false)
+export function useCustomPageBySlugRootLevel(slug: string) {
+  return useQuery({
+    queryKey: ['custom-pages', 'slug', slug, 'root'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('custom_pages')
+        .select('*')
+        .eq('slug', slug)
+        .eq('status', 'published')
+        .eq('use_prefix', false)
+        .single();
+      
+      if (error) {
+        if (error.code === 'PGRST116') return null; // Not found
+        throw error;
+      }
+      return data as CustomPage;
+    },
+    enabled: !!slug,
+  });
+}
+
+// For prefixed pages (use_prefix = true)
+export function useCustomPageBySlugWithPrefix(slug: string) {
+  return useQuery({
+    queryKey: ['custom-pages', 'slug', slug, 'prefixed'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('custom_pages')
+        .select('*')
+        .eq('slug', slug)
+        .eq('status', 'published')
+        .eq('use_prefix', true)
         .single();
       
       if (error) {

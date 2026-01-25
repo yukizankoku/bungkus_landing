@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
-import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
+import { arrayMove, SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -27,14 +27,27 @@ import {
   HelpCircle,
   Grid3X3,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Table as TableIcon,
+  RowsIcon,
+  ColumnsIcon
 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import ImageUploader from './ImageUploader';
 import RichTextEditor from './RichTextEditor';
 import { cn } from '@/lib/utils';
+import { useSiteSetting } from '@/hooks/useSiteSettings';
+import { Switch } from '@/components/ui/switch';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
-export type BlockType = 'hero' | 'text' | 'image_gallery' | 'cta' | 'features' | 'testimonial' | 'video' | 'faq' | 'pricing_table' | 'team_members' | 'stats_counter' | 'contact_form';
+export type BlockType = 'hero' | 'text' | 'table' | 'image_gallery' | 'cta' | 'features' | 'testimonial' | 'video' | 'faq' | 'pricing_table' | 'team_members' | 'stats_counter' | 'contact_form';
 
 export interface ContentBlock {
   id: string;
@@ -62,6 +75,11 @@ const blockTypeConfig: Record<BlockType, {
     icon: Type, 
     label: { en: 'Text Content', id: 'Konten Teks' },
     description: { en: 'Rich text content block', id: 'Blok konten teks kaya' }
+  },
+  table: { 
+    icon: TableIcon, 
+    label: { en: 'Table', id: 'Tabel' },
+    description: { en: 'Editable table with headers', id: 'Tabel yang dapat diedit dengan header' }
   },
   image_gallery: { 
     icon: Grid3X3, 
@@ -125,10 +143,20 @@ function getDefaultBlockData(type: BlockType): Record<string, any> {
       return { title: '', subtitle: '', background_image: '', primary_button_text: '', primary_button_link: '', secondary_button_text: '', secondary_button_link: '' };
     case 'text':
       return { content: '' };
+    case 'table':
+      return { headerType: 'both', rows: [['', '', ''], ['', '', ''], ['', '', '']] };
     case 'image_gallery':
       return { images: [], layout: 'grid' };
     case 'cta':
-      return { title: '', description: '', button_text: '', button_link: '', background_color: '' };
+      return { 
+        use_defaults: true, 
+        title: '', 
+        subtitle: '', 
+        primary_button_text: '', 
+        primary_button_link: '', 
+        secondary_button_text: '', 
+        secondary_button_link: '' 
+      };
     case 'features':
       return { items: [] };
     case 'testimonial':
@@ -222,14 +250,35 @@ function HeroBlockEditor({ data, onChange }: { data: Record<string, any>; onChan
   const { language } = useLanguage();
   return (
     <div className="space-y-4">
+      <div className="p-3 bg-muted/50 rounded-lg border border-dashed">
+        <p className="text-xs text-muted-foreground">
+          {language === 'en' 
+            ? '💡 Hero Section is for the main banner area only. For page headings, use a Text Block with H1/H2/H3 formatting.' 
+            : '💡 Bagian Hero hanya untuk area banner utama. Untuk heading halaman, gunakan Blok Teks dengan format H1/H2/H3.'}
+        </p>
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <Label>{language === 'en' ? 'Title' : 'Judul'}</Label>
-          <Input value={data.title || ''} onChange={(e) => onChange({ ...data, title: e.target.value })} />
+          <Label>{language === 'en' ? 'Hero Headline' : 'Judul Hero'}</Label>
+          <Input 
+            value={data.title || ''} 
+            onChange={(e) => onChange({ ...data, title: e.target.value })} 
+            placeholder={language === 'en' ? 'Main banner text' : 'Teks banner utama'}
+          />
+          <p className="text-xs text-muted-foreground mt-1">
+            {language === 'en' ? 'Large text displayed on the banner' : 'Teks besar ditampilkan di banner'}
+          </p>
         </div>
         <div>
-          <Label>{language === 'en' ? 'Subtitle' : 'Subjudul'}</Label>
-          <Input value={data.subtitle || ''} onChange={(e) => onChange({ ...data, subtitle: e.target.value })} />
+          <Label>{language === 'en' ? 'Hero Tagline' : 'Tagline Hero'}</Label>
+          <Input 
+            value={data.subtitle || ''} 
+            onChange={(e) => onChange({ ...data, subtitle: e.target.value })} 
+            placeholder={language === 'en' ? 'Supporting text' : 'Teks pendukung'}
+          />
+          <p className="text-xs text-muted-foreground mt-1">
+            {language === 'en' ? 'Smaller text below the headline' : 'Teks kecil di bawah judul'}
+          </p>
         </div>
       </div>
       <div>
@@ -322,25 +371,110 @@ function ImageGalleryBlockEditor({ data, onChange }: { data: Record<string, any>
 }
 
 function CTABlockEditor({ data, onChange }: { data: Record<string, any>; onChange: (data: Record<string, any>) => void }) {
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
+  const { data: ctaDefaults } = useSiteSetting('cta_defaults');
+  const defaults = ctaDefaults?.value || {};
+  
+  const useDefaults = data.use_defaults !== false;
+
   return (
     <div className="space-y-4">
+      {/* Toggle for using defaults */}
+      <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border">
+        <div>
+          <Label className="font-medium">
+            {language === 'en' ? 'Use Website Default CTA' : 'Gunakan CTA Default Website'}
+          </Label>
+          <p className="text-xs text-muted-foreground mt-1">
+            {language === 'en' 
+              ? 'Pull button content from global CTA settings. Leave fields empty to use defaults.' 
+              : 'Ambil konten tombol dari pengaturan CTA global. Kosongkan field untuk menggunakan default.'}
+          </p>
+        </div>
+        <Switch 
+          checked={useDefaults} 
+          onCheckedChange={(checked) => onChange({ ...data, use_defaults: checked })} 
+        />
+      </div>
+
+      {/* Show preview of defaults when enabled */}
+      {useDefaults && defaults.primary_button_text_id && (
+        <div className="p-4 border rounded-lg bg-muted/30 space-y-2">
+          <p className="text-sm font-medium text-muted-foreground">
+            {language === 'en' ? 'Default values (from Website Settings):' : 'Nilai default (dari Pengaturan Website):'}
+          </p>
+          <div className="grid grid-cols-2 gap-2 text-sm">
+            <div>
+              <span className="text-muted-foreground">{language === 'en' ? 'Primary:' : 'Utama:'}</span>{' '}
+              <span className="font-medium">{t(defaults.primary_button_text_id, defaults.primary_button_text_en)}</span>
+            </div>
+            <div>
+              <span className="text-muted-foreground">{language === 'en' ? 'Secondary:' : 'Sekunder:'}</span>{' '}
+              <span className="font-medium">{t(defaults.secondary_button_text_id, defaults.secondary_button_text_en)}</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div>
         <Label>{language === 'en' ? 'Title' : 'Judul'}</Label>
-        <Input value={data.title || ''} onChange={(e) => onChange({ ...data, title: e.target.value })} />
+        <Input 
+          value={data.title || ''} 
+          onChange={(e) => onChange({ ...data, title: e.target.value })} 
+          placeholder={useDefaults ? (language === 'en' ? 'Leave empty for default' : 'Kosongkan untuk default') : ''}
+        />
       </div>
       <div>
-        <Label>{language === 'en' ? 'Description' : 'Deskripsi'}</Label>
-        <Textarea value={data.description || ''} onChange={(e) => onChange({ ...data, description: e.target.value })} rows={3} />
+        <Label>{language === 'en' ? 'Subtitle / Description' : 'Subjudul / Deskripsi'}</Label>
+        <Textarea 
+          value={data.subtitle || ''} 
+          onChange={(e) => onChange({ ...data, subtitle: e.target.value })} 
+          rows={2}
+          placeholder={useDefaults ? (language === 'en' ? 'Leave empty for default' : 'Kosongkan untuk default') : ''}
+        />
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <Label>{language === 'en' ? 'Button Text' : 'Teks Tombol'}</Label>
-          <Input value={data.button_text || ''} onChange={(e) => onChange({ ...data, button_text: e.target.value })} />
+
+      <div className="border-t pt-4">
+        <p className="text-sm font-medium mb-3">{language === 'en' ? 'Primary Button' : 'Tombol Utama'}</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <Label>{language === 'en' ? 'Text' : 'Teks'}</Label>
+            <Input 
+              value={data.primary_button_text || ''} 
+              onChange={(e) => onChange({ ...data, primary_button_text: e.target.value })}
+              placeholder={useDefaults ? t(defaults.primary_button_text_id, defaults.primary_button_text_en) || '' : ''}
+            />
+          </div>
+          <div>
+            <Label>{language === 'en' ? 'Link' : 'Link'}</Label>
+            <Input 
+              value={data.primary_button_link || ''} 
+              onChange={(e) => onChange({ ...data, primary_button_link: e.target.value })}
+              placeholder={useDefaults ? defaults.primary_button_link || '' : ''}
+            />
+          </div>
         </div>
-        <div>
-          <Label>{language === 'en' ? 'Button Link' : 'Link Tombol'}</Label>
-          <Input value={data.button_link || ''} onChange={(e) => onChange({ ...data, button_link: e.target.value })} />
+      </div>
+
+      <div className="border-t pt-4">
+        <p className="text-sm font-medium mb-3">{language === 'en' ? 'Secondary Button' : 'Tombol Sekunder'}</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <Label>{language === 'en' ? 'Text' : 'Teks'}</Label>
+            <Input 
+              value={data.secondary_button_text || ''} 
+              onChange={(e) => onChange({ ...data, secondary_button_text: e.target.value })}
+              placeholder={useDefaults ? t(defaults.secondary_button_text_id, defaults.secondary_button_text_en) || '' : ''}
+            />
+          </div>
+          <div>
+            <Label>{language === 'en' ? 'Link' : 'Link'}</Label>
+            <Input 
+              value={data.secondary_button_link || ''} 
+              onChange={(e) => onChange({ ...data, secondary_button_link: e.target.value })}
+              placeholder={useDefaults ? defaults.secondary_button_link || '' : ''}
+            />
+          </div>
         </div>
       </div>
     </div>
@@ -737,12 +871,168 @@ function ContactFormBlockEditor({ data, onChange }: { data: Record<string, any>;
   );
 }
 
+// Table Block Editor with header toggle, add/remove rows/columns, rich text cells
+function TableBlockEditor({ data, onChange }: { data: Record<string, any>; onChange: (data: Record<string, any>) => void }) {
+  const { language } = useLanguage();
+  const rows: string[][] = data.rows || [['', '', ''], ['', '', ''], ['', '', '']];
+  const headerType: 'row' | 'column' | 'both' | 'none' = data.headerType || 'both';
+
+  const updateCell = (rowIdx: number, colIdx: number, value: string) => {
+    const newRows = rows.map((row, ri) =>
+      ri === rowIdx ? row.map((cell, ci) => (ci === colIdx ? value : cell)) : [...row]
+    );
+    onChange({ ...data, rows: newRows });
+  };
+
+  const addRow = () => {
+    const colCount = rows[0]?.length || 3;
+    const newRow = Array(colCount).fill('');
+    onChange({ ...data, rows: [...rows, newRow] });
+  };
+
+  const removeRow = (idx: number) => {
+    if (rows.length <= 1) return;
+    onChange({ ...data, rows: rows.filter((_, i) => i !== idx) });
+  };
+
+  const addColumn = () => {
+    const newRows = rows.map(row => [...row, '']);
+    onChange({ ...data, rows: newRows });
+  };
+
+  const removeColumn = (colIdx: number) => {
+    if ((rows[0]?.length || 0) <= 1) return;
+    const newRows = rows.map(row => row.filter((_, ci) => ci !== colIdx));
+    onChange({ ...data, rows: newRows });
+  };
+
+  const isHeaderCell = (rowIdx: number, colIdx: number) => {
+    if (headerType === 'both') return rowIdx === 0 || colIdx === 0;
+    if (headerType === 'row') return rowIdx === 0;
+    if (headerType === 'column') return colIdx === 0;
+    return false;
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Header Type Selector */}
+      <div>
+        <Label>{language === 'en' ? 'Header Type' : 'Tipe Header'}</Label>
+        <div className="flex flex-wrap gap-2 mt-2">
+          {(['both', 'row', 'column', 'none'] as const).map((type) => (
+            <Button
+              key={type}
+              type="button"
+              variant={headerType === type ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => onChange({ ...data, headerType: type })}
+            >
+              {type === 'both' && (language === 'en' ? 'Both Row & Column' : 'Baris & Kolom')}
+              {type === 'row' && (language === 'en' ? 'First Row' : 'Baris Pertama')}
+              {type === 'column' && (language === 'en' ? 'First Column' : 'Kolom Pertama')}
+              {type === 'none' && (language === 'en' ? 'No Headers' : 'Tanpa Header')}
+            </Button>
+          ))}
+        </div>
+      </div>
+
+      {/* Table Editor */}
+      <div className="overflow-x-auto border rounded-lg">
+        <table className="w-full border-collapse">
+          <tbody>
+            {rows.map((row, rowIdx) => (
+              <tr key={rowIdx}>
+                {row.map((cell, colIdx) => {
+                  const isHeader = isHeaderCell(rowIdx, colIdx);
+                  return (
+                    <td
+                      key={colIdx}
+                      className={cn(
+                        "border p-0 min-w-[120px] relative",
+                        isHeader && "bg-muted"
+                      )}
+                    >
+                      <div
+                        contentEditable
+                        suppressContentEditableWarning
+                        className={cn(
+                          "min-h-[40px] p-2 focus:outline-none focus:ring-2 focus:ring-primary/50",
+                          isHeader && "font-semibold"
+                        )}
+                        dangerouslySetInnerHTML={{ __html: cell }}
+                        onBlur={(e) => updateCell(rowIdx, colIdx, e.currentTarget.innerHTML)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            e.currentTarget.blur();
+                          }
+                          // Stop propagation for all keys to prevent dnd-kit interference
+                          e.stopPropagation();
+                        }}
+                      />
+                    </td>
+                  );
+                })}
+                {/* Remove Row Button */}
+                <td className="border-0 p-1 w-8">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={() => removeRow(rowIdx)}
+                    disabled={rows.length <= 1}
+                  >
+                    <Trash2 className="h-3 w-3 text-destructive" />
+                  </Button>
+                </td>
+              </tr>
+            ))}
+            {/* Remove Column Buttons Row */}
+            <tr>
+              {rows[0]?.map((_, colIdx) => (
+                <td key={colIdx} className="border-0 p-1 text-center">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={() => removeColumn(colIdx)}
+                    disabled={(rows[0]?.length || 0) <= 1}
+                  >
+                    <Trash2 className="h-3 w-3 text-destructive" />
+                  </Button>
+                </td>
+              ))}
+              <td></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      {/* Add Row/Column Buttons */}
+      <div className="flex gap-2">
+        <Button type="button" variant="outline" size="sm" onClick={addRow}>
+          <RowsIcon className="h-4 w-4 mr-2" />
+          {language === 'en' ? 'Add Row' : 'Tambah Baris'}
+        </Button>
+        <Button type="button" variant="outline" size="sm" onClick={addColumn}>
+          <ColumnsIcon className="h-4 w-4 mr-2" />
+          {language === 'en' ? 'Add Column' : 'Tambah Kolom'}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 function BlockEditor({ block, onChange }: { block: ContentBlock; onChange: (data: Record<string, any>) => void }) {
   switch (block.type) {
     case 'hero':
       return <HeroBlockEditor data={block.data} onChange={onChange} />;
     case 'text':
       return <TextBlockEditor data={block.data} onChange={onChange} />;
+    case 'table':
+      return <TableBlockEditor data={block.data} onChange={onChange} />;
     case 'image_gallery':
       return <ImageGalleryBlockEditor data={block.data} onChange={onChange} />;
     case 'cta':
@@ -772,12 +1062,13 @@ export default function ContentBlockEditor({ blocks, onChange }: ContentBlockEdi
   const { language } = useLanguage();
   const [expandedBlocks, setExpandedBlocks] = useState<Set<string>>(new Set());
   const [showAddMenu, setShowAddMenu] = useState(false);
+  const [showTableSizeDialog, setShowTableSizeDialog] = useState(false);
+  const [tableRows, setTableRows] = useState(3);
+  const [tableCols, setTableCols] = useState(3);
 
+  // Only use PointerSensor - remove KeyboardSensor to prevent conflicts with rich text editing
   const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
+    useSensor(PointerSensor)
   );
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -790,6 +1081,12 @@ export default function ContentBlockEditor({ blocks, onChange }: ContentBlockEdi
   };
 
   const addBlock = (type: BlockType) => {
+    if (type === 'table') {
+      setShowTableSizeDialog(true);
+      setShowAddMenu(false);
+      return;
+    }
+    
     const newBlock: ContentBlock = {
       id: generateId(),
       type,
@@ -798,6 +1095,20 @@ export default function ContentBlockEditor({ blocks, onChange }: ContentBlockEdi
     onChange([...blocks, newBlock]);
     setExpandedBlocks(prev => new Set([...prev, newBlock.id]));
     setShowAddMenu(false);
+  };
+
+  const addTableBlock = () => {
+    const rows = Array(tableRows).fill(null).map(() => Array(tableCols).fill(''));
+    const newBlock: ContentBlock = {
+      id: generateId(),
+      type: 'table',
+      data: { headerType: 'both', rows },
+    };
+    onChange([...blocks, newBlock]);
+    setExpandedBlocks(prev => new Set([...prev, newBlock.id]));
+    setShowTableSizeDialog(false);
+    setTableRows(3);
+    setTableCols(3);
   };
 
   const deleteBlock = (id: string) => {
@@ -891,6 +1202,50 @@ export default function ContentBlockEditor({ blocks, onChange }: ContentBlockEdi
           </Card>
         )}
       </div>
+
+      {/* Table Size Dialog */}
+      <Dialog open={showTableSizeDialog} onOpenChange={setShowTableSizeDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{language === 'en' ? 'Table Size' : 'Ukuran Tabel'}</DialogTitle>
+            <DialogDescription>
+              {language === 'en' ? 'Choose the number of rows and columns for your table.' : 'Pilih jumlah baris dan kolom untuk tabel Anda.'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-4 py-4">
+            <div>
+              <Label htmlFor="table-rows">{language === 'en' ? 'Rows' : 'Baris'}</Label>
+              <Input
+                id="table-rows"
+                type="number"
+                min={1}
+                max={20}
+                value={tableRows}
+                onChange={(e) => setTableRows(Math.max(1, Math.min(20, parseInt(e.target.value) || 1)))}
+              />
+            </div>
+            <div>
+              <Label htmlFor="table-cols">{language === 'en' ? 'Columns' : 'Kolom'}</Label>
+              <Input
+                id="table-cols"
+                type="number"
+                min={1}
+                max={10}
+                value={tableCols}
+                onChange={(e) => setTableCols(Math.max(1, Math.min(10, parseInt(e.target.value) || 1)))}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowTableSizeDialog(false)}>
+              {language === 'en' ? 'Cancel' : 'Batal'}
+            </Button>
+            <Button onClick={addTableBlock}>
+              {language === 'en' ? 'Create Table' : 'Buat Tabel'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

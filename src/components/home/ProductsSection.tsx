@@ -111,7 +111,7 @@ export function ProductsSection({ title, subtitle, items }: ProductsSectionProps
 
         <div className="text-center mt-16">
           <Button asChild size="lg" className="gap-2 rounded-full px-8">
-            <Link to="/produk/katalog">
+            <Link to="/produk">
               {t('Lihat Semua Produk', 'View All Products')}
               <ArrowRight className="h-4 w-4" />
             </Link>

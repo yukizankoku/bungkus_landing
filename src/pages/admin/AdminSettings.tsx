@@ -86,6 +86,12 @@ export default function AdminSettings() {
     secondary_button_text_en: 'View Products',
     secondary_button_text_id: 'Lihat Produk'
   });
+  const [footer, setFooter] = useState({
+    description_en: 'Quality packaging solutions for Indonesian businesses. Serving corporations and SMEs with dedication.',
+    description_id: 'PT Bungkus Indonesia adalah pabrik kardus dan vendor packaging tepercaya yang melayani pengiriman ke seluruh Indonesia (Jakarta, Surabaya, Bandung, dll). Kami spesialis dalam cetak kemasan makanan, custom box, dan solusi logistik untuk kebutuhan bisnis B2B.',
+    copyright_en: 'All rights reserved.',
+    copyright_id: 'Hak cipta dilindungi.'
+  });
 
   const handleCopyRobotsTxt = async () => {
     if (!seo.robots_txt) return;
@@ -115,6 +121,7 @@ export default function AdminSettings() {
       const whatsappSetting = settings.find(s => s.key === 'whatsapp');
       const seoSetting = settings.find(s => s.key === 'seo');
       const ctaDefaultsSetting = settings.find(s => s.key === 'cta_defaults');
+      const footerSetting = settings.find(s => s.key === 'footer');
       
       if (logoSetting?.value) setLogo(logoSetting.value as any);
       if (contactSetting?.value) setContact(contactSetting.value as any);
@@ -123,6 +130,7 @@ export default function AdminSettings() {
       if (whatsappSetting?.value) setWhatsapp({ ...whatsapp, ...(whatsappSetting.value as any) });
       if (seoSetting?.value) setSeo({ ...seo, ...(seoSetting.value as any) });
       if (ctaDefaultsSetting?.value) setCtaDefaults({ ...ctaDefaults, ...(ctaDefaultsSetting.value as any) });
+      if (footerSetting?.value) setFooter({ ...footer, ...(footerSetting.value as any) });
     }
   }, [settings]);
 
@@ -133,6 +141,7 @@ export default function AdminSettings() {
   const handleSaveWhatsapp = () => updateSetting.mutate({ key: 'whatsapp', value: whatsapp });
   const handleSaveSeo = () => updateSetting.mutate({ key: 'seo', value: seo });
   const handleSaveCtaDefaults = () => updateSetting.mutate({ key: 'cta_defaults', value: ctaDefaults });
+  const handleSaveFooter = () => updateSetting.mutate({ key: 'footer', value: footer });
 
   if (isLoading) {
     return (
@@ -987,6 +996,66 @@ export default function AdminSettings() {
             <div>
               <Label>X (Twitter)</Label>
               <Input value={social.twitter} onChange={(e) => setSocial(prev => ({ ...prev, twitter: e.target.value }))} placeholder="https://x.com/..." />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Footer Settings */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div className="flex items-center gap-3">
+              <FileText className="h-5 w-5 text-primary" />
+              <div>
+                <CardTitle>{language === 'en' ? 'Footer Settings' : 'Pengaturan Footer'}</CardTitle>
+                <CardDescription>
+                  {language === 'en' ? 'Configure footer description and copyright text' : 'Konfigurasi deskripsi footer dan teks hak cipta'}
+                </CardDescription>
+              </div>
+            </div>
+            <Button size="sm" onClick={handleSaveFooter} disabled={updateSetting.isPending} className="w-9 h-9 p-0">
+              <span className="w-4 h-4 inline-flex items-center justify-center">
+                {updateSetting.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              </span>
+            </Button>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label>{language === 'en' ? 'Description (English)' : 'Deskripsi (Inggris)'}</Label>
+                <Textarea 
+                  value={footer.description_en} 
+                  onChange={(e) => setFooter(prev => ({ ...prev, description_en: e.target.value }))}
+                  placeholder="Quality packaging solutions for Indonesian businesses..."
+                  rows={4}
+                />
+              </div>
+              <div>
+                <Label>{language === 'en' ? 'Description (Indonesian)' : 'Deskripsi (Indonesia)'}</Label>
+                <Textarea 
+                  value={footer.description_id} 
+                  onChange={(e) => setFooter(prev => ({ ...prev, description_id: e.target.value }))}
+                  placeholder="Solusi kemasan berkualitas untuk bisnis Indonesia..."
+                  rows={4}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label>{language === 'en' ? 'Copyright Text (English)' : 'Teks Hak Cipta (Inggris)'}</Label>
+                <Input 
+                  value={footer.copyright_en} 
+                  onChange={(e) => setFooter(prev => ({ ...prev, copyright_en: e.target.value }))}
+                  placeholder="All rights reserved."
+                />
+              </div>
+              <div>
+                <Label>{language === 'en' ? 'Copyright Text (Indonesian)' : 'Teks Hak Cipta (Indonesia)'}</Label>
+                <Input 
+                  value={footer.copyright_id} 
+                  onChange={(e) => setFooter(prev => ({ ...prev, copyright_id: e.target.value }))}
+                  placeholder="Hak cipta dilindungi."
+                />
+              </div>
             </div>
           </CardContent>
         </Card>

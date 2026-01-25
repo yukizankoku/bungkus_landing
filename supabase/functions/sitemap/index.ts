@@ -59,8 +59,8 @@ serve(async (req) => {
     const staticPages = [
       { key: 'home', path: '/', priority: '1.0', changefreq: 'weekly' },
       { key: 'about', path: '/tentang-kami', priority: '0.8', changefreq: 'monthly' },
-      { key: 'products', path: '/produk', priority: '0.9', changefreq: 'weekly' },
-      { key: 'product-catalog', path: '/produk/katalog', priority: '0.8', changefreq: 'weekly' },
+      { key: 'product-catalog', path: '/produk', priority: '0.9', changefreq: 'weekly' },
+      { key: 'products', path: '/produk/industri', priority: '0.8', changefreq: 'weekly' },
       { key: 'corporate-solutions', path: '/solusi-korporat', priority: '0.8', changefreq: 'monthly' },
       { key: 'umkm-solutions', path: '/solusi-umkm', priority: '0.8', changefreq: 'monthly' },
       { key: 'case-studies', path: '/case-studies', priority: '0.7', changefreq: 'monthly' },

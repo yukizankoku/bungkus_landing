@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Package } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { usePageContent } from '@/hooks/usePageContent';
 import { SEO } from '@/components/common/SEO';
@@ -6,6 +7,7 @@ import { Layout } from '@/components/layout/Layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { CTASection } from '@/components/home/CTASection';
+import { iconMap } from '@/lib/iconMap';
 
 interface Product {
   image: string;
@@ -18,6 +20,7 @@ interface Product {
 export default function ProductCatalog() {
   const { language, t } = useLanguage();
   const { data: pageContent, isLoading } = usePageContent('product-catalog');
+  const { data: productsPageContent } = usePageContent('products');
   const [activeCategory, setActiveCategory] = useState<string>('all');
 
   const content = language === 'id' ? pageContent?.content_id : pageContent?.content_en;
@@ -185,6 +188,60 @@ export default function ProductCatalog() {
           )}
         </div>
       </section>
+
+      {/* Industry Categories Section - from Products page */}
+      {(() => {
+        const productsContent = language === 'id' ? productsPageContent?.content_id : productsPageContent?.content_en;
+        const categories = productsContent?.categories || [];
+        
+        if (categories.length === 0) return null;
+        
+        return (
+          <section className="py-24 bg-muted/30">
+            <div className="container mx-auto px-4">
+              <div className="text-center mb-12">
+                <h2 className="text-3xl sm:text-4xl font-display font-bold text-foreground mb-4">
+                  {t('Kategori Industri', 'Industry Categories')}
+                </h2>
+                <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+                  {t('Berbagai pilihan kemasan untuk kebutuhan industri Anda', 'Various packaging options for your industry needs')}
+                </p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {categories.map((category: any, index: number) => {
+                  const IconComponent = iconMap[category.icon] || Package;
+                  return (
+                    <div
+                      key={index}
+                      className="p-8 rounded-2xl bg-card border border-border hover:border-secondary/50 transition-all duration-300 hover-lift"
+                    >
+                      <div className="w-16 h-16 rounded-2xl bg-secondary/10 flex items-center justify-center mb-6">
+                        <IconComponent className="h-8 w-8 text-secondary" />
+                      </div>
+                      <h3 className="text-2xl font-display font-bold text-foreground mb-3">
+                        {category.title}
+                      </h3>
+                      <p className="text-muted-foreground mb-6">
+                        {category.description}
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {(category.products || []).map((product: string, idx: number) => (
+                          <span
+                            key={idx}
+                            className="px-3 py-1 bg-muted text-muted-foreground text-sm rounded-full"
+                          >
+                            {product}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </section>
+        );
+      })()}
 
       <CTASection />
     </Layout>

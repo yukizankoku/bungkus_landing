@@ -130,6 +130,7 @@ export type Database = {
           title_en: string
           title_id: string
           updated_at: string | null
+          use_prefix: boolean | null
         }
         Insert: {
           content_en?: Json | null
@@ -150,6 +151,7 @@ export type Database = {
           title_en: string
           title_id: string
           updated_at?: string | null
+          use_prefix?: boolean | null
         }
         Update: {
           content_en?: Json | null
@@ -170,6 +172,7 @@ export type Database = {
           title_en?: string
           title_id?: string
           updated_at?: string | null
+          use_prefix?: boolean | null
         }
         Relationships: [
           {
@@ -234,24 +237,30 @@ export type Database = {
           content_id: Json | null
           id: string
           page_key: string
+          slug: string | null
           updated_at: string | null
           updated_by: string | null
+          use_prefix: boolean | null
         }
         Insert: {
           content_en?: Json | null
           content_id?: Json | null
           id?: string
           page_key: string
+          slug?: string | null
           updated_at?: string | null
           updated_by?: string | null
+          use_prefix?: boolean | null
         }
         Update: {
           content_en?: Json | null
           content_id?: Json | null
           id?: string
           page_key?: string
+          slug?: string | null
           updated_at?: string | null
           updated_by?: string | null
+          use_prefix?: boolean | null
         }
         Relationships: []
       }

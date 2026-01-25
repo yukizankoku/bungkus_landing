@@ -13,12 +13,18 @@ const XIcon = ({ className }: { className?: string }) => (
 );
 
 export function Footer() {
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
   const { data: settings } = useSiteSettings();
 
   const socialSetting = settings?.find(s => s.key === 'social')?.value as { instagram?: string; facebook?: string; linkedin?: string; youtube?: string; twitter?: string } | undefined;
   const contactSetting = settings?.find(s => s.key === 'contact')?.value as { email?: string; phone?: string; address?: string } | undefined;
   const logoSetting = settings?.find(s => s.key === 'logo')?.value as { light?: string; dark?: string } | undefined;
+  const footerSetting = settings?.find(s => s.key === 'footer')?.value as { 
+    description_en?: string; 
+    description_id?: string; 
+    copyright_en?: string; 
+    copyright_id?: string;
+  } | undefined;
   
   // Use CMS dark logo for footer (light background text), fallback to static asset
   const footerLogo = logoSetting?.dark || logoWhiteFallback;
@@ -58,10 +64,10 @@ export function Footer() {
               <img src={footerLogo} alt="Bungkus Indonesia" className="h-16 w-auto" />
             </Link>
             <p className="text-primary-foreground/80 text-sm leading-relaxed mb-6">
-              {t(
-                'Solusi kemasan berkualitas untuk bisnis Indonesia. Melayani korporasi dan UMKM dengan dedikasi.',
-                'Quality packaging solutions for Indonesian businesses. Serving corporations and SMEs with dedication.'
-              )}
+              {language === 'id' 
+                ? (footerSetting?.description_id || 'PT Bungkus Indonesia adalah pabrik kardus dan vendor packaging tepercaya yang melayani pengiriman ke seluruh Indonesia (Jakarta, Surabaya, Bandung, dll). Kami spesialis dalam cetak kemasan makanan, custom box, dan solusi logistik untuk kebutuhan bisnis B2B.')
+                : (footerSetting?.description_en || 'Quality packaging solutions for Indonesian businesses. Serving corporations and SMEs with dedication.')
+              }
             </p>
             {socialLinks.length > 0 && (
               <div className="flex gap-4">
@@ -144,7 +150,10 @@ export function Footer() {
         <div className="border-t border-primary-foreground/10 mt-12 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-primary-foreground/60 text-sm">
-              © {new Date().getFullYear()} Bungkus Indonesia. {t('Hak cipta dilindungi.', 'All rights reserved.')}
+              © {new Date().getFullYear()} Bungkus Indonesia. {language === 'id' 
+                ? (footerSetting?.copyright_id || 'Hak cipta dilindungi.')
+                : (footerSetting?.copyright_en || 'All rights reserved.')
+              }
             </p>
             <div className="flex gap-6">
               <Link to="/privacy" className="text-primary-foreground/60 hover:text-primary-foreground text-sm transition-colors">

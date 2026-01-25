@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Save, Plus, Trash2, GripVertical } from 'lucide-react';
+import { Save, Plus, Trash2, GripVertical, Languages, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,6 +16,18 @@ import SEOAudit from '@/components/admin/SEOAudit';
 import { usePageContent, useUpdatePageContent } from '@/hooks/usePageContent';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
+import { supabase } from '@/integrations/supabase/client';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 export default function AdminHomeEditor() {
   const navigate = useNavigate();
@@ -25,6 +37,7 @@ export default function AdminHomeEditor() {
 
   const [contentEn, setContentEn] = useState<Record<string, any>>({});
   const [contentId, setContentId] = useState<Record<string, any>>({});
+  const [isTranslating, setIsTranslating] = useState(false);
 
   useEffect(() => {
     if (pageContent) {
@@ -39,6 +52,61 @@ export default function AdminHomeEditor() {
       contentEn,
       contentId
     });
+  };
+
+  const handleTranslateToEnglish = async () => {
+    setIsTranslating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('translate-content', {
+        body: { pageKey: 'home', contentId }
+      });
+
+      if (error) throw error;
+
+      if (data?.translatedContent) {
+        // Preserve existing images from English content
+        const translatedWithImages = {
+          ...data.translatedContent,
+          hero: {
+            ...data.translatedContent.hero,
+            images: contentEn.hero?.images || data.translatedContent.hero?.images || []
+          },
+          products: {
+            ...data.translatedContent.products,
+            items: (data.translatedContent.products?.items || []).map((item: any, index: number) => ({
+              ...item,
+              image: contentEn.products?.items?.[index]?.image || item.image || ''
+            }))
+          },
+          clients: {
+            ...data.translatedContent.clients,
+            logos: contentEn.clients?.logos || data.translatedContent.clients?.logos || []
+          },
+          testimonials: {
+            ...data.translatedContent.testimonials,
+            items: (data.translatedContent.testimonials?.items || []).map((item: any, index: number) => ({
+              ...item,
+              avatar: contentEn.testimonials?.items?.[index]?.avatar || item.avatar || ''
+            }))
+          }
+        };
+        
+        setContentEn(translatedWithImages);
+        toast({
+          title: "Translation Complete",
+          description: "Indonesian content has been translated to English. Don't forget to save!",
+        });
+      }
+    } catch (error: any) {
+      console.error('Translation error:', error);
+      toast({
+        title: "Translation Failed",
+        description: error.message || "Failed to translate content",
+        variant: "destructive",
+      });
+    } finally {
+      setIsTranslating(false);
+    }
   };
 
   const updateSection = (lang: 'en' | 'id', section: string, key: string, value: any) => {
@@ -112,12 +180,42 @@ export default function AdminHomeEditor() {
             <h1 className="text-2xl font-display font-bold">Edit Home Page</h1>
             <p className="text-muted-foreground">Manage all sections of your home page</p>
           </div>
-          <Button onClick={handleSave} disabled={updatePageContent.isPending} className="min-w-[140px]">
-            <span className="w-4 h-4 mr-2 inline-flex items-center justify-center">
-              <Save className="h-4 w-4" />
-            </span>
-            {updatePageContent.isPending ? 'Saving...' : 'Save Changes'}
-          </Button>
+          <div className="flex items-center gap-2">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" disabled={isTranslating}>
+                  {isTranslating ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Languages className="h-4 w-4 mr-2" />
+                  )}
+                  AI Translate
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Translate Indonesian to English?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will use AI to translate all Indonesian content to English. 
+                    Existing English content will be replaced. Images and links will be preserved.
+                    "Bungkus Indonesia" will not be translated.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleTranslateToEnglish}>
+                    Translate
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+            <Button onClick={handleSave} disabled={updatePageContent.isPending} className="min-w-[140px]">
+              <span className="w-4 h-4 mr-2 inline-flex items-center justify-center">
+                <Save className="h-4 w-4" />
+              </span>
+              {updatePageContent.isPending ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">

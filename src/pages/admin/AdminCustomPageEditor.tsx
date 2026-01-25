@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Loader2, Save, ArrowLeft, Eye, FileText, Search, Settings } from 'lucide-react';
+import { Loader2, Save, ArrowLeft, Eye, FileText, Search, Settings, Languages } from 'lucide-react';
 import { 
   useCustomPageById,
   useCustomPages,
@@ -27,6 +27,19 @@ import {
 import ImageUploader from '@/components/admin/ImageUploader';
 import ContentBlockEditor, { ContentBlock } from '@/components/admin/ContentBlockEditor';
 import SEOAudit from '@/components/admin/SEOAudit';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 interface PageFormData {
   title_en: string;
@@ -43,6 +56,7 @@ interface PageFormData {
   meta_description_id: string;
   og_image: string;
   is_in_menu: boolean;
+  use_prefix: boolean;
 }
 
 const defaultFormData: PageFormData = {
@@ -50,7 +64,7 @@ const defaultFormData: PageFormData = {
   title_id: '',
   slug: '',
   parent_id: null,
-  template: 'default',
+  template: 'landing',
   status: 'draft',
   content_en: [],
   content_id: [],
@@ -60,6 +74,7 @@ const defaultFormData: PageFormData = {
   meta_description_id: '',
   og_image: '',
   is_in_menu: false,
+  use_prefix: false,
 };
 
 export default function AdminCustomPageEditor() {
@@ -77,6 +92,8 @@ export default function AdminCustomPageEditor() {
   const [autoSlug, setAutoSlug] = useState(true);
   const [blocksEn, setBlocksEn] = useState<ContentBlock[]>([]);
   const [blocksId, setBlocksId] = useState<ContentBlock[]>([]);
+  const [isTranslating, setIsTranslating] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     if (existingPage) {
@@ -95,6 +112,7 @@ export default function AdminCustomPageEditor() {
         meta_description_id: existingPage.meta_description_id || '',
         og_image: existingPage.og_image || '',
         is_in_menu: existingPage.is_in_menu,
+        use_prefix: existingPage.use_prefix ?? false,
       });
       // Extract blocks from content arrays
       const enBlocks = Array.isArray(existingPage.content_en) ? existingPage.content_en : [];
@@ -106,10 +124,138 @@ export default function AdminCustomPageEditor() {
   }, [existingPage]);
 
   useEffect(() => {
-    if (autoSlug && formData.title_en) {
-      setFormData(prev => ({ ...prev, slug: generateSlug(formData.title_en) }));
+    if (autoSlug && formData.title_id) {
+      setFormData(prev => ({ ...prev, slug: generateSlug(formData.title_id) }));
     }
-  }, [formData.title_en, autoSlug]);
+  }, [formData.title_id, autoSlug]);
+
+  // Extract images from blocks to preserve during translation
+  const extractImagesFromBlocks = (blocks: ContentBlock[]) => {
+    const images: Record<string, any> = {};
+    blocks.forEach((block, index) => {
+      if (block.data.background_image) {
+        images[`${index}_background_image`] = block.data.background_image;
+      }
+      if (block.data.author_image) {
+        images[`${index}_author_image`] = block.data.author_image;
+      }
+      if (block.data.images) {
+        images[`${index}_images`] = block.data.images;
+      }
+      if (block.data.items && Array.isArray(block.data.items)) {
+        block.data.items.forEach((item: any, itemIndex: number) => {
+          if (item.image) {
+            images[`${index}_items_${itemIndex}_image`] = item.image;
+          }
+        });
+      }
+      if (block.data.members && Array.isArray(block.data.members)) {
+        block.data.members.forEach((member: any, memberIndex: number) => {
+          if (member.image) {
+            images[`${index}_members_${memberIndex}_image`] = member.image;
+          }
+        });
+      }
+    });
+    return images;
+  };
+
+  // Apply preserved images back to translated blocks
+  const applyImagesToBlocks = (blocks: ContentBlock[], images: Record<string, any>) => {
+    return blocks.map((block, index) => {
+      const newData = { ...block.data };
+      
+      if (images[`${index}_background_image`]) {
+        newData.background_image = images[`${index}_background_image`];
+      }
+      if (images[`${index}_author_image`]) {
+        newData.author_image = images[`${index}_author_image`];
+      }
+      if (images[`${index}_images`]) {
+        newData.images = images[`${index}_images`];
+      }
+      if (newData.items && Array.isArray(newData.items)) {
+        newData.items = newData.items.map((item: any, itemIndex: number) => {
+          if (images[`${index}_items_${itemIndex}_image`]) {
+            return { ...item, image: images[`${index}_items_${itemIndex}_image`] };
+          }
+          return item;
+        });
+      }
+      if (newData.members && Array.isArray(newData.members)) {
+        newData.members = newData.members.map((member: any, memberIndex: number) => {
+          if (images[`${index}_members_${memberIndex}_image`]) {
+            return { ...member, image: images[`${index}_members_${memberIndex}_image`] };
+          }
+          return member;
+        });
+      }
+      
+      return { ...block, data: newData };
+    });
+  };
+
+  const handleTranslateToEnglish = async () => {
+    setIsTranslating(true);
+    try {
+      // Preserve images from Indonesian blocks (source)
+      const preservedImages = extractImagesFromBlocks(blocksId);
+
+      // Prepare content for translation
+      const contentToTranslate = {
+        title: formData.title_id,
+        meta_title: formData.meta_title_id,
+        meta_description: formData.meta_description_id,
+        blocks: blocksId,
+      };
+
+      const { data, error } = await supabase.functions.invoke('translate-content', {
+        body: {
+          pageKey: `custom-${formData.slug}`,
+          contentId: contentToTranslate,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.translated) {
+        const translated = data.translated;
+        
+        // Update form data
+        if (translated.title) {
+          setFormData(prev => ({ ...prev, title_en: translated.title }));
+        }
+        if (translated.meta_title) {
+          setFormData(prev => ({ ...prev, meta_title_en: translated.meta_title }));
+        }
+        if (translated.meta_description) {
+          setFormData(prev => ({ ...prev, meta_description_en: translated.meta_description }));
+        }
+        
+        // Update blocks with preserved images
+        if (translated.blocks && Array.isArray(translated.blocks)) {
+          const translatedBlocks = applyImagesToBlocks(translated.blocks as ContentBlock[], preservedImages);
+          setBlocksEn(translatedBlocks);
+        }
+
+        toast({
+          title: language === 'en' ? 'Translation Complete' : 'Terjemahan Selesai',
+          description: language === 'en' 
+            ? 'Indonesian content has been translated to English. You can now edit freely.' 
+            : 'Konten Indonesia telah diterjemahkan ke Inggris. Anda dapat mengedit dengan bebas.',
+        });
+      }
+    } catch (error: any) {
+      console.error('Translation error:', error);
+      toast({
+        title: language === 'en' ? 'Translation Failed' : 'Terjemahan Gagal',
+        description: error.message || (language === 'en' ? 'Failed to translate content' : 'Gagal menerjemahkan konten'),
+        variant: 'destructive',
+      });
+    } finally {
+      setIsTranslating(false);
+    }
+  };
 
   const handleSave = async () => {
     const pageData = {
@@ -156,21 +302,53 @@ export default function AdminCustomPageEditor() {
                   ? (language === 'en' ? 'Create New Page' : 'Buat Halaman Baru')
                   : (language === 'en' ? 'Edit Page' : 'Edit Halaman')}
               </h1>
-              {!isNew && formData.slug && (
-                <p className="text-muted-foreground mt-1">/{formData.slug}</p>
-              )}
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            {!isNew && formData.status === 'published' && (
-              <Button variant="outline" asChild>
-                <a href={`/p/${formData.slug}`} target="_blank" rel="noopener noreferrer">
-                  <Eye className="h-4 w-4 mr-2" />
-                  {language === 'en' ? 'Preview' : 'Pratinjau'}
-                </a>
-              </Button>
+            {!isNew && formData.slug && (
+              <p className="text-muted-foreground mt-1">
+                {formData.use_prefix ? `/p/${formData.slug}` : `/${formData.slug}`}
+              </p>
             )}
-            <Button onClick={handleSave} disabled={isPending || !formData.title_en || !formData.slug} className="min-w-[100px]">
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          {!isNew && formData.status === 'published' && (
+            <Button variant="outline" asChild>
+              <a href={formData.use_prefix ? `/p/${formData.slug}` : `/${formData.slug}`} target="_blank" rel="noopener noreferrer">
+                <Eye className="h-4 w-4 mr-2" />
+                {language === 'en' ? 'Preview' : 'Pratinjau'}
+              </a>
+            </Button>
+          )}
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" disabled={isTranslating || blocksId.length === 0}>
+                  {isTranslating ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Languages className="h-4 w-4 mr-2" />
+                  )}
+                  {language === 'en' ? 'AI Translate' : 'Terjemah AI'}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>
+                    {language === 'en' ? 'Translate to English?' : 'Terjemahkan ke Inggris?'}
+                  </AlertDialogTitle>
+                  <AlertDialogDescription>
+                    {language === 'en' 
+                      ? 'This will translate the Indonesian content to English using AI. Existing English content will be replaced. Images will be preserved. You can edit the results freely after translation.'
+                      : 'Ini akan menerjemahkan konten Indonesia ke Inggris menggunakan AI. Konten Inggris yang ada akan diganti. Gambar akan dipertahankan. Anda dapat mengedit hasil terjemahan dengan bebas.'}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>{language === 'en' ? 'Cancel' : 'Batal'}</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleTranslateToEnglish}>
+                    {language === 'en' ? 'Translate' : 'Terjemahkan'}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+            <Button onClick={handleSave} disabled={isPending || !formData.title_id || !formData.slug} className="min-w-[100px]">
               <span className="w-4 h-4 mr-2 inline-flex items-center justify-center">
                 {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
               </span>
@@ -234,7 +412,9 @@ export default function AdminCustomPageEditor() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-muted-foreground">/p/</span>
+                    <span className="text-muted-foreground">
+                      {formData.use_prefix ? '/p/' : '/'}
+                    </span>
                     <Input
                       value={formData.slug}
                       onChange={(e) => setFormData(prev => ({ ...prev, slug: e.target.value }))}
@@ -296,21 +476,29 @@ export default function AdminCustomPageEditor() {
               <CardContent className="space-y-6">
                 <p className="text-xs text-muted-foreground -mt-2">
                   {language === 'en' 
-                    ? 'Tip: Add content blocks in English first, then click "Sync Images" to copy images to Indonesian version.' 
-                    : 'Tips: Tambahkan blok konten di versi English dulu, lalu klik "Sinkron Gambar" untuk menyalin gambar ke versi Indonesia.'}
+                    ? 'Tip: Write content in Indonesian first, then use "AI Translate" button to generate English version.' 
+                    : 'Tips: Tulis konten dalam Bahasa Indonesia dulu, lalu gunakan tombol "Terjemah AI" untuk generate versi Inggris.'}
                 </p>
                 <div>
-                  <Label className="mb-2 block">Content (English)</Label>
-                  <ContentBlockEditor
-                    blocks={blocksEn}
-                    onChange={setBlocksEn}
-                  />
-                </div>
-                <div>
-                  <Label className="mb-2 block">Content (Indonesian)</Label>
+                  <Label className="mb-2 block flex items-center gap-2">
+                    Content (Indonesian) 
+                    <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">Primary</span>
+                  </Label>
                   <ContentBlockEditor
                     blocks={blocksId}
                     onChange={setBlocksId}
+                  />
+                </div>
+                <div>
+                  <Label className="mb-2 block flex items-center gap-2">
+                    Content (English)
+                    {blocksEn.length === 0 && blocksId.length > 0 && (
+                      <span className="text-xs text-muted-foreground">(Use AI Translate to generate)</span>
+                    )}
+                  </Label>
+                  <ContentBlockEditor
+                    blocks={blocksEn}
+                    onChange={setBlocksEn}
                   />
                 </div>
               </CardContent>
@@ -500,6 +688,29 @@ export default function AdminCustomPageEditor() {
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+
+                <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/30">
+                  <div>
+                    <Label>{language === 'en' ? 'URL Prefix (/p/)' : 'Prefix URL (/p/)'}</Label>
+                    <p className="text-xs text-muted-foreground">
+                      {language === 'en' 
+                        ? 'Use /p/ prefix for this page URL. OFF = root level (better for SEO)' 
+                        : 'Gunakan prefix /p/ untuk URL halaman ini. OFF = level root (lebih baik untuk SEO)'}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className={`text-sm ${!formData.use_prefix ? 'font-medium text-primary' : 'text-muted-foreground'}`}>
+                      /{formData.slug || 'slug'}
+                    </span>
+                    <Switch
+                      checked={formData.use_prefix}
+                      onCheckedChange={(checked) => setFormData(prev => ({ ...prev, use_prefix: checked }))}
+                    />
+                    <span className={`text-sm ${formData.use_prefix ? 'font-medium text-primary' : 'text-muted-foreground'}`}>
+                      /p/{formData.slug || 'slug'}
+                    </span>
+                  </div>
                 </div>
 
                 <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/30">

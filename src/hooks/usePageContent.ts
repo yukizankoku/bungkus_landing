@@ -8,6 +8,8 @@ export interface PageContent {
   content_en: Record<string, any>;
   content_id: Record<string, any>;
   updated_at: string;
+  slug?: string;
+  use_prefix?: boolean;
 }
 
 export function usePageContent(pageKey: string) {
@@ -49,19 +51,33 @@ export function useUpdatePageContent() {
     mutationFn: async ({ 
       pageKey, 
       contentEn, 
-      contentId 
+      contentId,
+      slug,
+      usePrefix
     }: { 
       pageKey: string; 
       contentEn: Record<string, any>; 
       contentId: Record<string, any>;
+      slug?: string;
+      usePrefix?: boolean;
     }) => {
+      const updateData: Record<string, any> = {
+        content_en: contentEn,
+        content_id: contentId,
+        updated_at: new Date().toISOString()
+      };
+      
+      // Only include slug and use_prefix if they're provided
+      if (slug !== undefined) {
+        updateData.slug = slug;
+      }
+      if (usePrefix !== undefined) {
+        updateData.use_prefix = usePrefix;
+      }
+
       const { data, error } = await supabase
         .from('page_content')
-        .update({
-          content_en: contentEn,
-          content_id: contentId,
-          updated_at: new Date().toISOString()
-        })
+        .update(updateData)
         .eq('page_key', pageKey)
         .select()
         .single();
@@ -72,6 +88,7 @@ export function useUpdatePageContent() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['page-content'] });
       queryClient.invalidateQueries({ queryKey: ['page-content', variables.pageKey] });
+      queryClient.invalidateQueries({ queryKey: ['page-routes'] });
       toast({
         title: 'Page updated',
         description: 'Your changes have been saved.'
@@ -83,6 +100,21 @@ export function useUpdatePageContent() {
         description: error.message || 'Failed to update page.',
         variant: 'destructive'
       });
+    }
+  });
+}
+
+export function usePageRoutes() {
+  return useQuery({
+    queryKey: ['page-routes'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('page_content')
+        .select('page_key, slug, use_prefix')
+        .not('slug', 'is', null);
+      
+      if (error) throw error;
+      return data as Array<{ page_key: string; slug: string; use_prefix: boolean }>;
     }
   });
 }

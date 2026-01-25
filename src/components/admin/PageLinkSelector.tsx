@@ -16,8 +16,8 @@ import { usePublishedCustomPages } from '@/hooks/useCustomPages';
 
 const fixedPages = [
   { value: '/', label: { en: 'Home', id: 'Beranda' } },
-  { value: '/produk', label: { en: 'Products', id: 'Produk' } },
-  { value: '/produk/katalog', label: { en: 'Product Catalog', id: 'Katalog Produk' } },
+  { value: '/produk', label: { en: 'Product Catalog', id: 'Katalog Produk' } },
+  { value: '/produk/industri', label: { en: 'Industry Categories', id: 'Kategori Industri' } },
   { value: '/solusi-korporat', label: { en: 'Corporate Solutions', id: 'Solusi Korporat' } },
   { value: '/solusi-umkm', label: { en: 'UMKM Solutions', id: 'Solusi UMKM' } },
   { value: '/tentang-kami', label: { en: 'About Us', id: 'Tentang Kami' } },

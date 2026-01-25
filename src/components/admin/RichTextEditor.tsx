@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { 
   Bold, 
@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils';
 import DOMPurify from 'dompurify';
 
 // Configure DOMPurify with allowed tags for rich text editing
-const ALLOWED_TAGS = ['h1', 'h2', 'h3', 'p', 'strong', 'em', 'u', 'ul', 'ol', 'li', 'blockquote', 'a', 'br', 'div', 'span'];
+const ALLOWED_TAGS = ['h1', 'h2', 'h3', 'p', 'strong', 'em', 'u', 'ul', 'ol', 'li', 'blockquote', 'a', 'br', 'div', 'span', 'table', 'thead', 'tbody', 'tr', 'th', 'td'];
 const ALLOWED_ATTR = ['href', 'target', 'rel'];
 
 const sanitizeHtml = (html: string): string => {
@@ -32,20 +32,45 @@ interface RichTextEditorProps {
   onChange: (value: string) => void;
   placeholder?: string;
   className?: string;
+  minHeight?: string;
 }
 
-export default function RichTextEditor({ value, onChange, placeholder, className }: RichTextEditorProps) {
+export default function RichTextEditor({ value, onChange, placeholder, className, minHeight = "300px" }: RichTextEditorProps) {
   const editorRef = useRef<HTMLDivElement>(null);
   const [isFocused, setIsFocused] = useState(false);
+  const lastValueRef = useRef(value);
+  const isInternalChangeRef = useRef(false);
 
-  const execCommand = useCallback((command: string, value?: string) => {
-    document.execCommand(command, false, value);
+  // Only update DOM from props when content changed externally (e.g., AI translate)
+  useEffect(() => {
+    if (editorRef.current && !isInternalChangeRef.current) {
+      // Only update if value actually changed from outside
+      if (value !== lastValueRef.current) {
+        editorRef.current.innerHTML = value;
+        lastValueRef.current = value;
+      }
+    }
+    isInternalChangeRef.current = false;
+  }, [value]);
+
+  // Set initial content on mount
+  useEffect(() => {
+    if (editorRef.current && value) {
+      editorRef.current.innerHTML = value;
+      lastValueRef.current = value;
+    }
+  }, []);
+
+  const execCommand = useCallback((command: string, commandValue?: string) => {
+    document.execCommand(command, false, commandValue);
     editorRef.current?.focus();
     
     // Update the value after command execution with sanitization
     setTimeout(() => {
       if (editorRef.current) {
         const sanitized = sanitizeHtml(editorRef.current.innerHTML);
+        isInternalChangeRef.current = true;
+        lastValueRef.current = sanitized;
         onChange(sanitized);
       }
     }, 0);
@@ -58,6 +83,8 @@ export default function RichTextEditor({ value, onChange, placeholder, className
     setTimeout(() => {
       if (editorRef.current) {
         const sanitized = sanitizeHtml(editorRef.current.innerHTML);
+        isInternalChangeRef.current = true;
+        lastValueRef.current = sanitized;
         onChange(sanitized);
       }
     }, 0);
@@ -67,6 +94,8 @@ export default function RichTextEditor({ value, onChange, placeholder, className
   const handleInput = () => {
     if (editorRef.current) {
       const sanitized = sanitizeHtml(editorRef.current.innerHTML);
+      isInternalChangeRef.current = true;
+      lastValueRef.current = sanitized;
       onChange(sanitized);
     }
   };
@@ -75,6 +104,33 @@ export default function RichTextEditor({ value, onChange, placeholder, className
     e.preventDefault();
     const text = e.clipboardData.getData('text/plain');
     document.execCommand('insertText', false, text);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      // CRITICAL: Stop propagation to prevent dnd-kit KeyboardSensor from hijacking the event
+      e.stopPropagation();
+      e.nativeEvent.stopImmediatePropagation?.();
+      
+      if (e.shiftKey) {
+        // Shift+Enter = line break within same block
+        e.preventDefault();
+        document.execCommand('insertLineBreak', false);
+      } else {
+        // Enter = new paragraph
+        e.preventDefault();
+        document.execCommand('insertParagraph', false);
+      }
+      // Update value after key action
+      setTimeout(() => {
+        if (editorRef.current) {
+          const sanitized = sanitizeHtml(editorRef.current.innerHTML);
+          isInternalChangeRef.current = true;
+          lastValueRef.current = sanitized;
+          onChange(sanitized);
+        }
+      }, 0);
+    }
   };
 
   const toolbarButtons = [
@@ -131,17 +187,18 @@ export default function RichTextEditor({ value, onChange, placeholder, className
         contentEditable
         onInput={handleInput}
         onPaste={handlePaste}
+        onKeyDown={handleKeyDown}
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
-        dangerouslySetInnerHTML={{ __html: value }}
         className={cn(
-          "min-h-[300px] p-4 focus:outline-none prose prose-sm max-w-none rich-text-editor",
+          "p-4 focus:outline-none prose prose-sm max-w-none rich-text-editor",
           "prose-headings:text-foreground prose-p:text-foreground prose-strong:text-foreground",
           "prose-blockquote:border-l-primary prose-blockquote:text-muted-foreground",
           "prose-ul:text-foreground prose-ol:text-foreground prose-li:text-foreground",
           "prose-a:text-primary",
           !value && !isFocused && "text-muted-foreground"
         )}
+        style={{ minHeight }}
         data-placeholder={placeholder}
       />
       

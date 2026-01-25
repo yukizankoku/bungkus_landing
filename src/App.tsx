@@ -2,24 +2,14 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 
 // Public Pages
 import Home from "./pages/Home";
-import CorporateSolutions from "./pages/CorporateSolutions";
-import UMKMSolutions from "./pages/UMKMSolutions";
-import Products from "./pages/Products";
-import ProductCatalog from "./pages/ProductCatalog";
-import CaseStudies from "./pages/CaseStudies";
-import Blog from "./pages/Blog";
 import BlogPost from "./pages/BlogPost";
-import About from "./pages/About";
-import Contact from "./pages/Contact";
-import PrivacyPolicy from "./pages/PrivacyPolicy";
-import TermsConditions from "./pages/TermsConditions";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -37,6 +27,7 @@ import AdminMenus from "./pages/admin/AdminMenus";
 import AdminCustomPages from "./pages/admin/AdminCustomPages";
 import AdminCustomPageEditor from "./pages/admin/AdminCustomPageEditor";
 import CustomPage from "./pages/CustomPage";
+import DynamicBuiltInPageRouter from "./components/common/DynamicBuiltInPageRouter";
 
 // Components
 import { PromoPopup } from "./components/common/PromoPopup";
@@ -63,17 +54,7 @@ const App = () => (
               <Routes>
                 {/* Public Routes */}
                 <Route path="/" element={<Home />} />
-                <Route path="/solusi-korporat" element={<CorporateSolutions />} />
-                <Route path="/solusi-umkm" element={<UMKMSolutions />} />
-                <Route path="/produk" element={<Products />} />
-                <Route path="/produk/katalog" element={<ProductCatalog />} />
-                <Route path="/case-studies" element={<CaseStudies />} />
-                <Route path="/blog" element={<Blog />} />
                 <Route path="/blog/:slug" element={<BlogPost />} />
-                <Route path="/tentang-kami" element={<About />} />
-                <Route path="/hubungi-kami" element={<Contact />} />
-                <Route path="/privacy" element={<PrivacyPolicy />} />
-                <Route path="/terms" element={<TermsConditions />} />
                 <Route path="/auth" element={<Auth />} />
                 
                 {/* Admin Routes */}
@@ -90,8 +71,12 @@ const App = () => (
                 <Route path="/admin/custom-pages" element={<ProtectedRoute><AdminCustomPages /></ProtectedRoute>} />
                 <Route path="/admin/custom-pages/:id" element={<ProtectedRoute><AdminCustomPageEditor /></ProtectedRoute>} />
                 
-                {/* Custom Pages Route */}
+                {/* Custom Pages Route with /p/ prefix */}
                 <Route path="/p/:slug" element={<CustomPage />} />
+                
+                {/* Dynamic routing for all other paths - checks both built-in and custom pages */}
+                <Route path="/:slug" element={<DynamicBuiltInPageRouter />} />
+                <Route path="/:slug/:subslug" element={<DynamicBuiltInPageRouter />} />
                 
                 <Route path="*" element={<NotFound />} />
               </Routes>
