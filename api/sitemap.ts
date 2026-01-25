@@ -7,6 +7,15 @@ export default async function handler(req, res) {
   const xml = await r.text();
 
   res.setHeader("Content-Type", "application/xml; charset=utf-8");
-  res.setHeader("Cache-Control", "no-store, max-age=0");
+  res.setHeader(
+    "Cache-Control",
+    "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0"
+  );
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
+  res.setHeader("Surrogate-Control", "no-store");
+
+  res.removeHeader("ETag");
+
   res.status(200).send(xml);
 }
