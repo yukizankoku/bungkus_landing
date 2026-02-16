@@ -1,21 +1,20 @@
 export default async function handler(req, res) {
-  const r = await fetch(
-    "https://ahhhiqcnnwpfbgdggvct.supabase.co/functions/v1/sitemap",
-    { cache: "no-store" }
-  );
+  try {
+    const response = await fetch(
+      "https://ahhhiqcnnwpfbgdggvct.supabase.co/functions/v1/sitemap"
+    );
 
-  const xml = await r.text();
+    if (!response.ok) {
+      throw new Error("Gagal ambil sitemap dari Supabase");
+    }
 
-  res.setHeader("Content-Type", "application/xml; charset=utf-8");
-  res.setHeader(
-    "Cache-Control",
-    "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0"
-  );
-  res.setHeader("Pragma", "no-cache");
-  res.setHeader("Expires", "0");
-  res.setHeader("Surrogate-Control", "no-store");
+    const sitemap = await response.text();
 
-  res.removeHeader("ETag");
+    res.setHeader("Content-Type", "application/xml");
+    res.status(200).send(sitemap);
 
-  res.status(200).send(xml);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Error ambil sitemap");
+  }
 }
